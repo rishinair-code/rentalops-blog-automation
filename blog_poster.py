@@ -8,6 +8,7 @@ GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
 HASHNODE_API_KEY = os.environ.get('HASHNODE_API_KEY')
 HASHNODE_PUBLICATION_ID = os.environ.get('HASHNODE_PUBLICATION_ID')
 UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
+HASHNODE_BLOG_HOST = os.environ.get('HASHNODE_BLOG_HOST')
 
 # Blog topics for rental operations
 import hashlib
@@ -90,6 +91,117 @@ Key Canadian realities to reference where relevant:
 Always position US tools (DoorLoop, Buildium, AppFolio) as missing these Canadian realities.
 Always write amounts in CAD. Always reference Canadian banking (EFT, Interac e-Transfer).
 """
+RENTALOPS_FEATURES = """
+RentalOps (rentalops.ca) is a Canadian-built rental expense and tax tracking tool — not adapted from a US product. Built specifically for landlords who need to file CRA Form T776.
+
+FEATURES TO REFERENCE NATURALLY WHERE RELEVANT:
+- CRA AUTO-CATEGORIZATION: Automatically sorts every expense into the correct CRA category and maps it to the right T776 line (e.g., line 9270 for professional fees, 9200 for repairs). No tax knowledge required from the landlord.
+- RECEIPT CAPTURE: Snap a photo of any receipt from your phone in ~15 seconds. Stored permanently — nothing gets lost before tax season.
+- PORTFOLIO HEALTH DASHBOARD: Real-time view of gross income, net profit, and top deductions across all properties year-round.
+- MISSED DEDUCTION FINDER: Flags deductions landlords commonly miss — helps maximize the annual refund.
+- ACCOUNTANT-READY EXPORT: One-click export produces a clean, audit-ready file organized by CRA category. No more handing over a shoebox of receipts.
+- MULTI-USER (Pro): Lets a spouse, partner, or bookkeeper access the same account.
+- AI INSIGHTS (Pro): Deeper financial analysis across large or multi-property portfolios.
+
+PRICING (always mention the free trial when referencing cost):
+- Starter: $6.99/mo — 1 property, T776 summary, income/expense tracking
+- Core: $9.99/mo — up to 5 properties, receipt upload, priority support
+- Pro: $19.99/mo — unlimited properties, AI insights, multi-user access
+- All plans: 7-day free trial, no credit card required
+
+INTEGRATION RULES:
+- Mention RentalOps once or twice per post maximum
+- The mention must connect directly to the topic — never feel like an ad
+- Always link as [RentalOps](https://rentalops.ca) when mentioned
+- Lead with the problem the feature solves, then introduce RentalOps as the solution
+"""
+def fetch_recent_posts():
+    """Fetch recent post titles and URLs from Hashnode for cross-linking"""
+    if not HASHNODE_BLOG_HOST:
+        print("⚠️  HASHNODE_BLOG_HOST not set — skipping cross-link fetch")
+        return []
+
+    url = "https://gql.hashnode.com"
+    headers = {
+        "Authorization": HASHNODE_API_KEY,
+        "Content-Type": "application/json"
+    }
+
+    query = """
+    query GetRecentPosts($host: String!) {
+        publication(host: $host) {
+            posts(first: 20) {
+                edges {
+                    node {
+                        title
+                        url
+                    }
+                }
+            }
+        }
+    }
+    """
+
+    payload = {
+        "query": query,
+        "variables": {"host": HASHNODE_BLOG_HOST}
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        response.raise_for_status()
+        result = response.json()
+
+        if 'errors' in result:
+            print(f"⚠️  Could not fetch posts for cross-linking: {result['errors']}")
+            return []
+
+        edges = result['data']['publication']['posts']['edges']
+        posts = [{"title": e['node']['title'], "url": e['node']['url']} for e in edges]
+        print(f"📚 Found {len(posts)} existing posts available for cross-linking")
+        return posts
+
+    except Exception as e:
+        print(f"⚠️  Cross-link fetch failed (non-critical, continuing): {e}")
+        return []
+
+
+def find_related_post(posts, topic):
+    """Find the most topically related existing post to cross-link"""
+    if not posts:
+        return None
+
+    topic_words = set(topic.lower().split())
+    # Remove common filler words that would create false matches
+    stopwords = {'a', 'an', 'the', 'and', 'or', 'for', 'in', 'of', 'to', 'vs', 'how', 'what', 'why', 'your'}
+    topic_words -= stopwords
+
+    best_match = None
+    best_score = 0
+
+    for post in posts:
+        title_words = set(post['title'].lower().split()) - stopwords
+        score = len(topic_words & title_words)
+        if score > best_score:
+            best_score = score
+            best_match = post
+
+    if best_score >= 1 and best_match:
+        print(f"🔗 Cross-link match found: '{best_match['title']}'")
+        return best_match
+
+    # Fall back to most recent post if no keyword match
+    if posts:
+        print(f"🔗 No keyword match — using most recent post as cross-link")
+        return posts[0]
+
+    return None
+
+
+def should_include_roi_section():
+    """Return True every 3rd week — those posts include a cost/ROI section"""
+    week_number = datetime.now().isocalendar()[1]
+    return week_number % 3 == 0
 
 def get_current_persona():
     """Rotate personas evenly using the current week number — no state file needed"""
@@ -101,14 +213,43 @@ def generate_blog_content():
     """Generate persona-targeted blog post using Groq AI"""
     
     persona = get_current_persona()
-    
+
     # Pick topic deterministically within the persona using day of year
     day_of_year = datetime.now().timetuple().tm_yday
     topic_index = day_of_year % len(persona["topics"])
     topic = persona["topics"][topic_index]
-    
+
     print(f"🎯 Target persona: {persona['name']}")
     print(f"🤖 Generating content about: {topic}")
+
+    # Fetch existing posts for cross-linking
+    recent_posts = fetch_recent_posts()
+    related_post = find_related_post(recent_posts, topic)
+
+    # Decide if this post gets a cost/ROI section
+    include_roi = should_include_roi_section()
+    print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
+
+    # Build optional prompt additions
+    crosslink_instruction = ""
+    if related_post:
+        crosslink_instruction = f"""
+CROSS-LINKING (mandatory):
+Naturally link to this related post somewhere in the article body where it genuinely fits:
+Title: "{related_post['title']}"
+URL: {related_post['url']}
+Use descriptive anchor text — never just "click here". Example: [how to serve an N4 notice correctly]({related_post['url']})
+"""
+
+    roi_instruction = ""
+    if include_roi:
+        roi_instruction = """
+COST/ROI SECTION (mandatory for this post):
+Include a section titled "## What This Mistake Actually Costs You" or "## Is [Tool/System] Worth It? A Real-Money Breakdown".
+Use realistic CAD figures relevant to Canadian landlords. Show the cost of the manual/wrong approach vs. the cost of doing it properly (time saved, fines avoided, missed deductions recovered, etc.).
+Example structure: "A missed CRA deduction on a $2,400 repair bill costs a landlord in the 33% tax bracket roughly $792 in avoidable tax. Over 5 years of similar misses, that's nearly $4,000 left on the table."
+End the section with a natural mention of how [RentalOps](https://rentalops.ca) addresses this specific cost.
+"""
     
     url = "https://api.groq.com/openai/v1/chat/completions"
     
@@ -132,13 +273,19 @@ TONE TO USE: {persona['tone']}
 CANADIAN CONTEXT (always apply where relevant):
 {CANADIAN_DIFFERENTIATOR}
 
+PRODUCT CONTEXT (reference naturally, never forced):
+{RENTALOPS_FEATURES}
+
+{crosslink_instruction}
+{roi_instruction}
+
 WRITING RULES:
 - Write for Canadian landlords. Reference the correct provincial tribunal, legislation, and rules for the topic.
 - If the topic is province-specific, go deep on that province. If it applies nationally, compare provinces where useful.
 - Never give generic US advice. Everything must be Canada-specific.
 - Do not recommend US tools as viable options for Canadian landlords.
-- Mention RentalOps naturally once or twice as a solution — never make it the focus.
 - You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations. Raw JSON only."""
+
             },
             {
                 "role": "user",
