@@ -65,7 +65,8 @@ Make the content practical and valuable for property managers."""
             }
         ],
         "temperature": 0.7,
-        "max_tokens": 4000
+        "max_tokens": 4000,
+        "response_format": {"type": "json_object"}
     }
     
     try:
