@@ -45,46 +45,116 @@ def generate_blog_content(topic):
         "messages": [
             {
                 "role": "system",
-                "content": "You are an expert blog writer specializing in rental property management and operations. Write engaging, SEO-optimized, practical blog posts that help landlords and property managers. Always return valid JSON only, no other text."
+                "content": """You are an expert blog writer specializing in rental property management. 
+You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
+Just pure JSON that can be directly parsed."""
             },
             {
                 "role": "user",
-                "content": f"""Write a comprehensive blog post (900-1200 words) about: {topic}
+                "content": f"""Write a blog post about: {topic}
 
-Return ONLY valid JSON with these exact keys:
-- title: (catchy, SEO-optimized title)
-- metaDescription: (compelling 140-150 character description)
-- tags: (array of exactly 5 relevant tags)
-- content: (full article in markdown format with ## headers, bullet points, and actionable tips)
+Return ONLY this JSON structure (no other text, no markdown):
+{{
+  "title": "SEO-optimized title here",
+  "metaDescription": "Compelling 140-150 character description",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "content": "Full article in markdown with ## headers and bullet points (900-1200 words)"
+}}
 
-Make it practical, actionable, and valuable for property managers."""
+Make the content practical and valuable for property managers."""
             }
         ],
-        "temperature": 0.8,
-        "max_tokens": 3000
+        "temperature": 0.7,
+        "max_tokens": 4000
     }
     
     try:
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         
         result = response.json()
-        content = result['choices'][0]['message']['content']
+        ai_response = result['choices'][0]['message']['content']
         
-        # Extract JSON from response (sometimes AI adds extra text)
-        if '```json' in content:
-            content = content.split('```json')[1].split('```')[0]
-        elif '```' in content:
-            content = content.split('```')[1].split('```')[0]
+        print(f"📥 Raw AI response (first 200 chars): {ai_response[:200]}...")
         
-        blog_data = json.loads(content.strip())
-        print("✅ Content generated successfully")
+        # Clean the response - remove common formatting issues
+        cleaned_response = ai_response.strip()
+        
+        # Remove markdown code blocks if present
+        if cleaned_response.startswith('```'):
+            # Extract content between code blocks
+            lines = cleaned_response.split('\n')
+            cleaned_lines = []
+            in_code_block = False
+            
+            for line in lines:
+                if line.strip().startswith('```'):
+                    in_code_block = not in_code_block
+                    continue
+                if not in_code_block:
+                    cleaned_lines.append(line)
+            
+            cleaned_response = '\n'.join(cleaned_lines).strip()
+        
+        # Find JSON object in the response
+        # Look for the first { and last }
+        start_idx = cleaned_response.find('{')
+        end_idx = cleaned_response.rfind('}')
+        
+        if start_idx == -1 or end_idx == -1:
+            print(f"❌ No JSON object found in response")
+            print(f"Full response: {ai_response}")
+            return None
+        
+        json_str = cleaned_response[start_idx:end_idx + 1]
+        
+        print(f"🔍 Extracted JSON (first 200 chars): {json_str[:200]}...")
+        
+        # Parse JSON
+        blog_data = json.loads(json_str)
+        
+        # Validate required fields
+        required_fields = ['title', 'metaDescription', 'tags', 'content']
+        missing_fields = [field for field in required_fields if field not in blog_data]
+        
+        if missing_fields:
+            print(f"❌ Missing required fields: {missing_fields}")
+            return None
+        
+        # Ensure tags is a list
+        if not isinstance(blog_data['tags'], list):
+            blog_data['tags'] = []
+        
+        # Limit tags to 5
+        blog_data['tags'] = blog_data['tags'][:5]
+        
+        print("✅ Content generated and validated successfully")
+        print(f"   Title: {blog_data['title'][:60]}...")
+        print(f"   Tags: {', '.join(blog_data['tags'])}")
+        print(f"   Content length: {len(blog_data['content'])} characters")
+        
         return blog_data
         
-    except Exception as e:
-        print(f"❌ Error generating content: {e}")
+    except requests.exceptions.Timeout:
+        print(f"❌ Error: API request timed out")
         return None
-
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error making API request: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"❌ Error parsing JSON: {e}")
+        print(f"Attempted to parse: {json_str[:500]}...")
+        print(f"\nFull AI response:\n{ai_response}")
+        return None
+    except KeyError as e:
+        print(f"❌ Error accessing response data: {e}")
+        print(f"Response structure: {result}")
+        return None
+    except Exception as e:
+        print(f"❌ Unexpected error generating content: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return None
 def get_unsplash_image(query):
     """Fetch relevant image from Unsplash"""
     print(f"🖼️  Fetching image for: {query}")
