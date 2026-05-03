@@ -1,7 +1,6 @@
 import os
 import json
 import requests
-import random
 from datetime import datetime
 
 # API Keys from GitHub Secrets (automatically loaded)
@@ -11,26 +10,104 @@ HASHNODE_PUBLICATION_ID = os.environ.get('HASHNODE_PUBLICATION_ID')
 UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
 
 # Blog topics for rental operations
-TOPICS = [
-    "tenant screening best practices",
-    "property maintenance schedules",
-    "lease agreement essentials",
-    "rent collection strategies",
-    "landlord legal compliance",
-    "property marketing tips",
-    "handling difficult tenants",
-    "property inspection checklists",
-    "rental property insurance",
-    "eviction process guidelines",
-    "rental property accounting",
-    "property management software comparison",
-    "seasonal property maintenance",
-    "tenant retention strategies",
-    "rental pricing optimization"
+import hashlib
+
+# Persona definitions — Canada-wide
+PERSONAS = [
+    {
+        "name": "Accidental Landlord",
+        "description": "Inherited or bought 1-3 rental units. Self-managing with spreadsheets and e-transfers. Scared of the provincial tribunal. No system, doesn't know the rules, hates chasing rent.",
+        "channels": "Facebook Groups, Reddit r/OntarioLandlord r/PersonalFinanceCanada, Kijiji forums",
+        "tone": "reassuring, plain language, no jargon, step-by-step guidance",
+        "topics": [
+            "what to do when a tenant stops paying rent in Canada",
+            "how to serve an eviction notice correctly in your province",
+            "simple rent tracking system for small Canadian landlords",
+            "provincial rental tribunal process explained for first-time landlords",
+            "Canadian Standard Lease agreements explained simply",
+            "how to handle a tenant maintenance request legally in Canada",
+            "what landlords must disclose before signing a lease in Canada",
+            "e-transfer rent collection risks and better alternatives for Canadian landlords",
+            "how to screen tenants legally under Canadian human rights law",
+            "what happens if you don't use your province's standard lease form",
+            "rent arrears process in BC vs Ontario vs Alberta — key differences",
+            "first-time landlord checklist for Canadian rental properties"
+        ]
+    },
+    {
+        "name": "Portfolio Builder",
+        "description": "Growing intentionally with 4-15 units across one or more Canadian provinces. Uses WhatsApp, spreadsheets, and bank alerts. Wants to look professional and save admin time. Pain: no cross-unit visibility, manual tenant screening, tax prep is a mess.",
+        "channels": "BiggerPockets Canada, LinkedIn, real estate investor meetups, YouTube, REIN",
+        "tone": "professional, data-driven, efficiency-focused, respects their time",
+        "topics": [
+            "how to track expenses across multiple rental properties in Canada",
+            "tenant screening checklist for Canadian landlords with multiple units",
+            "CRA rental income rules every Canadian landlord must know",
+            "how to prepare for tax season as a small portfolio landlord in Canada",
+            "automating rent collection across multiple Canadian properties",
+            "provincial rent increase guidelines across Canada for 2025",
+            "capital expense vs operating expense for Canadian rental properties",
+            "how to scale from 3 to 10 rental units without losing control",
+            "cross-unit maintenance tracking for growing Canadian landlords",
+            "how to create a professional landlord system without expensive US software",
+            "rental property depreciation (CCA) rules for Canadian landlords",
+            "GST HST implications for Canadian landlords — what you need to know"
+        ]
+    },
+    {
+        "name": "Part-Time Property Manager",
+        "description": "Manages 15-50 units for self plus family or friends across Canada. Paying in USD for US tools that don't understand Canadian provincial law. Needs owner statements, e-signature leases, provincial tribunal forms built in.",
+        "channels": "LPMA, FRPO, IPOANS, SKLA, LinkedIn, local REIN chapters, REIC",
+        "tone": "authoritative, compliance-focused, efficiency and professionalism",
+        "topics": [
+            "why US property management software fails Canadian landlords",
+            "provincial rental tribunal forms every Canadian property manager needs",
+            "how to create owner statements for informal property management in Canada",
+            "eviction notice types by province — BC RTB vs Ontario LTB vs Alberta RTDRS",
+            "Canadian rent increase rules vs US states — key differences",
+            "how to manage properties for family members legally in Canada",
+            "e-signature lease agreements and legal validity across Canadian provinces",
+            "EFT rent collection in CAD — why USD tools create problems",
+            "provincial landlord association compliance checklist for Canadian PMs",
+            "rent control rules by province — which provinces have it and which don't",
+            "how to handle security deposits legally in each Canadian province",
+            "owner reporting best practices for informal Canadian property managers"
+        ]
+    }
 ]
 
-def generate_blog_content(topic):
-    """Generate blog post using Groq AI"""
+CANADIAN_DIFFERENTIATOR = """
+RentalOps is built specifically for Canadian landlords — not adapted from a US tool.
+
+Key Canadian realities to reference where relevant:
+- FEDERAL: CRA rental income reporting, capital cost allowance (CCA), GST/HST rules
+- ONTARIO: LTB (Landlord and Tenant Board), N4/N12/N13 forms, Ontario Standard Lease, rent control exemptions for post-2018 units
+- BC: Residential Tenancy Branch (RTB), BC Standard Lease, rent increase rules, security deposit limits (half month)
+- ALBERTA: RTDRS (Residential Tenancy Dispute Resolution Service), no rent control, fixed vs periodic tenancy rules
+- QUEBEC: Tribunal administratif du logement (TAL), French-language lease requirements, strict rent increase process
+- OTHER PROVINCES: Reference the relevant provincial tribunal and rules for Manitoba (RTB), Saskatchewan (SKLA), Nova Scotia, New Brunswick, PEI, Newfoundland as appropriate
+
+Always position US tools (DoorLoop, Buildium, AppFolio) as missing these Canadian realities.
+Always write amounts in CAD. Always reference Canadian banking (EFT, Interac e-Transfer).
+"""
+
+def get_current_persona():
+    """Rotate personas evenly using the current week number — no state file needed"""
+    week_number = datetime.now().isocalendar()[1]
+    persona_index = week_number % len(PERSONAS)
+    return PERSONAS[persona_index]
+
+def generate_blog_content():
+    """Generate persona-targeted blog post using Groq AI"""
+    
+    persona = get_current_persona()
+    
+    # Pick topic deterministically within the persona using day of year
+    day_of_year = datetime.now().timetuple().tm_yday
+    topic_index = day_of_year % len(persona["topics"])
+    topic = persona["topics"][topic_index]
+    
+    print(f"🎯 Target persona: {persona['name']}")
     print(f"🤖 Generating content about: {topic}")
     
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -45,23 +122,36 @@ def generate_blog_content(topic):
         "messages": [
             {
                 "role": "system",
-                "content": """You are an expert blog writer specializing in rental property management. 
-You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations.
-Just pure JSON that can be directly parsed."""
+                "content": f"""You are a content writer for RentalOps, a property management tool built specifically for Canadian landlords — not adapted from a US product.
+
+TARGET READER: {persona['name']}
+WHO THEY ARE: {persona['description']}
+WHERE THEY HANG OUT: {persona['channels']}
+TONE TO USE: {persona['tone']}
+
+CANADIAN CONTEXT (always apply where relevant):
+{CANADIAN_DIFFERENTIATOR}
+
+WRITING RULES:
+- Write for Canadian landlords. Reference the correct provincial tribunal, legislation, and rules for the topic.
+- If the topic is province-specific, go deep on that province. If it applies nationally, compare provinces where useful.
+- Never give generic US advice. Everything must be Canada-specific.
+- Do not recommend US tools as viable options for Canadian landlords.
+- Mention RentalOps naturally once or twice as a solution — never make it the focus.
+- You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations. Raw JSON only."""
             },
             {
                 "role": "user",
-                "content": f"""Write a blog post about: {topic}
+                "content": f"""Write a blog post targeting {persona['name']} landlords about: {topic}
 
 Return ONLY this JSON structure (no other text, no markdown):
 {{
-  "title": "SEO-optimized title here",
-  "metaDescription": "Compelling 140-150 character description",
+  "title": "SEO-optimized title written for {persona['name']} in Canada",
+  "metaDescription": "Compelling 140-150 character description for this persona",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "content": "Full article in markdown with ## headers and bullet points (900-1200 words)"
-}}
-
-Make the content practical and valuable for property managers."""
+  "content": "Full article in markdown with ## headers (900-1200 words). Written in {persona['tone']} tone. Canada-specific throughout.",
+  "persona": "{persona['name']}"
+}}"""
             }
         ],
         "temperature": 0.7,
@@ -78,43 +168,30 @@ Make the content practical and valuable for property managers."""
         
         print(f"📥 Raw AI response (first 200 chars): {ai_response[:200]}...")
         
-        # Clean the response - remove common formatting issues
         cleaned_response = ai_response.strip()
         
-        # Remove markdown code blocks if present
         if cleaned_response.startswith('```'):
-            # Extract content between code blocks
             lines = cleaned_response.split('\n')
             cleaned_lines = []
             in_code_block = False
-            
             for line in lines:
                 if line.strip().startswith('```'):
                     in_code_block = not in_code_block
                     continue
                 if not in_code_block:
                     cleaned_lines.append(line)
-            
             cleaned_response = '\n'.join(cleaned_lines).strip()
         
-        # Find JSON object in the response
-        # Look for the first { and last }
         start_idx = cleaned_response.find('{')
         end_idx = cleaned_response.rfind('}')
         
         if start_idx == -1 or end_idx == -1:
             print(f"❌ No JSON object found in response")
-            print(f"Full response: {ai_response}")
             return None
         
         json_str = cleaned_response[start_idx:end_idx + 1]
-        
-        print(f"🔍 Extracted JSON (first 200 chars): {json_str[:200]}...")
-        
-        # Parse JSON
         blog_data = json.loads(json_str)
         
-        # Validate required fields
         required_fields = ['title', 'metaDescription', 'tags', 'content']
         missing_fields = [field for field in required_fields if field not in blog_data]
         
@@ -122,14 +199,12 @@ Make the content practical and valuable for property managers."""
             print(f"❌ Missing required fields: {missing_fields}")
             return None
         
-        # Ensure tags is a list
         if not isinstance(blog_data['tags'], list):
             blog_data['tags'] = []
-        
-        # Limit tags to 5
         blog_data['tags'] = blog_data['tags'][:5]
         
-        print("✅ Content generated and validated successfully")
+        print("✅ Content generated successfully")
+        print(f"   Persona: {persona['name']}")
         print(f"   Title: {blog_data['title'][:60]}...")
         print(f"   Tags: {', '.join(blog_data['tags'])}")
         print(f"   Content length: {len(blog_data['content'])} characters")
@@ -144,18 +219,13 @@ Make the content practical and valuable for property managers."""
         return None
     except json.JSONDecodeError as e:
         print(f"❌ Error parsing JSON: {e}")
-        print(f"Attempted to parse: {json_str[:500]}...")
-        print(f"\nFull AI response:\n{ai_response}")
-        return None
-    except KeyError as e:
-        print(f"❌ Error accessing response data: {e}")
-        print(f"Response structure: {result}")
         return None
     except Exception as e:
-        print(f"❌ Unexpected error generating content: {e}")
+        print(f"❌ Unexpected error: {e}")
         import traceback
         print(traceback.format_exc())
         return None
+        
 def get_unsplash_image(query):
     """Fetch relevant image from Unsplash"""
     print(f"🖼️  Fetching image for: {query}")
@@ -272,12 +342,7 @@ def main():
         print("❌ Missing API keys! Please check GitHub Secrets.")
         return
     
-    # Select random topic
-    topic = random.choice(TOPICS)
-    print(f"\n📌 Selected topic: {topic}\n")
-    
-    # Generate blog content
-    blog_data = generate_blog_content(topic)
+    blog_data = generate_blog_content()
     if not blog_data:
         print("❌ Failed to generate content. Exiting.")
         return
