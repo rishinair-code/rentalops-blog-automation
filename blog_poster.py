@@ -348,7 +348,7 @@ def main():
         return
     
     # Get cover image
-    image_data = get_unsplash_image(f"rental property {topic}")
+    image_data = get_unsplash_image(f"rental property {blog_data['title']}")
     
     # Publish to Hashnode
     success = publish_to_hashnode(blog_data, image_data)
