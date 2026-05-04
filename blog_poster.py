@@ -572,6 +572,7 @@ def main():
     success = publish_to_hashnode(blog_data, image_data)
     
     if success:
+        save_used_topic(topic)
         print("\n" + "=" * 60)
         print("✅ Blog post automation completed successfully!")
         print("=" * 60)
