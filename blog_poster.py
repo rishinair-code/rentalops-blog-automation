@@ -169,7 +169,7 @@ def fetch_recent_posts():
 def find_related_post(posts, topic):
     """Find the most topically related existing post to cross-link"""
     if not posts:
-        return None
+        return None, None
 
     topic_words = set(topic.lower().split())
     # Remove common filler words that would create false matches
@@ -195,7 +195,7 @@ def find_related_post(posts, topic):
         print(f"🔗 No keyword match — using most recent post as cross-link")
         return posts[0]
 
-    return None
+    return None, None
 
 
 def should_include_roi_section():
@@ -368,7 +368,7 @@ Return ONLY this JSON structure (no other text, no markdown):
         
         if start_idx == -1 or end_idx == -1:
             print(f"❌ No JSON object found in response")
-            return None
+            return None, None
         
         json_str = cleaned_response[start_idx:end_idx + 1]
         blog_data = json.loads(json_str)
@@ -378,7 +378,7 @@ Return ONLY this JSON structure (no other text, no markdown):
         
         if missing_fields:
             print(f"❌ Missing required fields: {missing_fields}")
-            return None
+            return None, None
         
         if not isinstance(blog_data['tags'], list):
             blog_data['tags'] = []
@@ -390,22 +390,22 @@ Return ONLY this JSON structure (no other text, no markdown):
         print(f"   Tags: {', '.join(blog_data['tags'])}")
         print(f"   Content length: {len(blog_data['content'])} characters")
         
-        return blog_data
+        return blog_data, topic
         
     except requests.exceptions.Timeout:
         print(f"❌ Error: API request timed out")
-        return None
+        return None, None
     except requests.exceptions.RequestException as e:
         print(f"❌ Error making API request: {e}")
-        return None
+        return None, None
     except json.JSONDecodeError as e:
         print(f"❌ Error parsing JSON: {e}")
-        return None
+        return None, None
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         import traceback
         print(traceback.format_exc())
-        return None
+        return None, None
 def generate_image_query(title):
     """Extract a short, varied Unsplash search query from the blog title"""
     # Map common rental topics to visually distinct search terms
@@ -472,7 +472,7 @@ def get_unsplash_image(query):
         
     except Exception as e:
         print(f"⚠️  Error fetching image: {e}")
-        return None
+        return None, None
 
 def publish_to_hashnode(blog_data, image_data):
     """Publish blog post to Hashnode"""
@@ -559,8 +559,8 @@ def main():
         print("❌ Missing API keys! Please check GitHub Secrets.")
         return
     
-    blog_data = generate_blog_content()
-    if not blog_data:
+    blog_data, topic = generate_blog_content()
+    if not blog_data or not topic:
         print("❌ Failed to generate content. Exiting.")
         return
     
