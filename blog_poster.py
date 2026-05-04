@@ -372,7 +372,43 @@ Return ONLY this JSON structure (no other text, no markdown):
         import traceback
         print(traceback.format_exc())
         return None
-        
+def generate_image_query(title):
+    """Extract a short, varied Unsplash search query from the blog title"""
+    # Map common rental topics to visually distinct search terms
+    topic_map = [
+        (["eviction", "tribunal", "LTB", "RTB", "notice"], "tenant landlord dispute paperwork"),
+        (["tax", "CRA", "T776", "deduction", "refund", "CCA"], "canadian tax documents accounting"),
+        (["receipt", "expense", "tracking", "bookkeeping"], "receipt invoice bookkeeping desk"),
+        (["rent", "collection", "payment", "arrears"], "rent payment money transfer"),
+        (["screening", "tenant", "application"], "rental application interview"),
+        (["maintenance", "repair", "inspection"], "home repair maintenance tools"),
+        (["lease", "agreement", "contract", "sign"], "signing rental contract documents"),
+        (["insurance", "liability"], "home insurance protection"),
+        (["scale", "portfolio", "multiple", "units", "properties"], "apartment building investment"),
+        (["software", "tool", "app", "system", "spreadsheet"], "property management laptop"),
+        (["mortgage", "interest", "financing", "bank"], "canadian real estate mortgage"),
+        (["security deposit", "deposit"], "keys apartment handover"),
+    ]
+
+    title_lower = title.lower()
+    for keywords, query in topic_map:
+        if any(k in title_lower for k in keywords):
+            print(f"🖼️  Image query: '{query}'")
+            return query
+
+    # Fallback — generic but at least varied by adding a random aspect
+    import random
+    fallbacks = [
+        "canadian rental property exterior",
+        "apartment building Canada",
+        "landlord property keys",
+        "rental home neighbourhood Canada",
+        "residential property investment"
+    ]
+    query = random.choice(fallbacks)
+    print(f"🖼️  Image query (fallback): '{query}'")
+    return query        
+
 def get_unsplash_image(query):
     """Fetch relevant image from Unsplash"""
     print(f"🖼️  Fetching image for: {query}")
@@ -495,7 +531,8 @@ def main():
         return
     
     # Get cover image
-    image_data = get_unsplash_image(f"rental property {blog_data['title']}")
+    image_search_query = generate_image_query(blog_data['title'])
+    image_data = get_unsplash_image(image_search_query)
     
     # Publish to Hashnode
     success = publish_to_hashnode(blog_data, image_data)
