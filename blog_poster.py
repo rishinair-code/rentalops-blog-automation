@@ -202,6 +202,33 @@ def should_include_roi_section():
     """Return True every 3rd week — those posts include a cost/ROI section"""
     week_number = datetime.now().isocalendar()[1]
     return week_number % 3 == 0
+def get_used_topics():
+    """Read used topics from local file (checked out by Actions)"""
+    try:
+        if os.path.exists("used_topics.json"):
+            with open("used_topics.json", "r") as f:
+                used = json.load(f)
+            print(f"📋 Found {len(used)} previously used topics")
+            return used
+        else:
+            print("📋 No used_topics.json found — starting fresh")
+            return []
+    except Exception as e:
+        print(f"⚠️  Could not read used topics: {e}")
+        return []
+
+
+def save_used_topic(topic):
+    """Save used topic to local file — git commit happens in workflow"""
+    try:
+        used = get_used_topics()
+        if topic not in used:
+            used.append(topic)
+        with open("used_topics.json", "w") as f:
+            json.dump(used, f, indent=2)
+        print(f"✅ Topic saved: {topic[:50]}")
+    except Exception as e:
+        print(f"⚠️  Could not save used topic: {e}")
 
 def get_current_persona():
     """Rotate personas evenly using the current week number — no state file needed"""
@@ -214,10 +241,17 @@ def generate_blog_content():
     
     persona = get_current_persona()
 
-    # Pick topic deterministically within the persona using day of year
+    # Pick a topic that hasn't been used yet
+    used_topics = get_used_topics()
+    available_topics = [t for t in persona["topics"] if t not in used_topics]
+
+    if not available_topics:
+        print(f"🔄 All topics for {persona['name']} used — resetting")
+        available_topics = persona["topics"]
+
     day_of_year = datetime.now().timetuple().tm_yday
-    topic_index = day_of_year % len(persona["topics"])
-    topic = persona["topics"][topic_index]
+    topic_index = day_of_year % len(available_topics)
+    topic = available_topics[topic_index]
 
     print(f"🎯 Target persona: {persona['name']}")
     print(f"🤖 Generating content about: {topic}")
