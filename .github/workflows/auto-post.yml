@@ -31,4 +31,7 @@ jobs:
           HASHNODE_API_KEY: ${{ secrets.HASHNODE_API_KEY }}
           HASHNODE_PUBLICATION_ID: ${{ secrets.HASHNODE_PUBLICATION_ID }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          HASHNODE_BLOG_HOST: ${{ secrets.HASHNODE_BLOG_HOST }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: python blog_poster.py
