@@ -1,11 +1,8 @@
 name: Auto Post Blog
-
 on:
   schedule:
-    # Runs every Monday at 9:00 AM UTC (adjust timezone as needed)
     - cron: '0 9 * * *'
-  
-  workflow_dispatch:  # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   post-blog:
@@ -32,6 +29,13 @@ jobs:
           HASHNODE_PUBLICATION_ID: ${{ secrets.HASHNODE_PUBLICATION_ID }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           HASHNODE_BLOG_HOST: ${{ secrets.HASHNODE_BLOG_HOST }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: python blog_poster.py
+
+      - name: Commit used topics log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add used_topics.json
+          git diff --staged --quiet || git commit -m "Update used topics log"
+          git push
