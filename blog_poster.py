@@ -442,6 +442,227 @@ def generate_image_query(title):
     query = random.choice(fallbacks)
     print(f"🖼️  Image query (fallback): '{query}'")
     return query        
+def generate_linkedin_post(blog_data, blog_url):
+    """Generate a LinkedIn-optimized version of the blog post"""
+    print("🔗 Generating LinkedIn post...")
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {
+                "role": "system",
+                "content": """You are a LinkedIn content writer for RentalOps, a Canadian landlord tax and expense tracking tool.
+Write punchy, engaging LinkedIn posts that feel human — not like marketing copy.
+You MUST respond with ONLY valid JSON. No markdown, no code blocks. Raw JSON only."""
+            },
+            {
+                "role": "user",
+                "content": f"""Write a LinkedIn post based on this blog article.
+
+Blog title: {blog_data['title']}
+Blog summary: {blog_data['metaDescription']}
+Target persona: {blog_data.get('persona', 'Canadian landlord')}
+Full article URL: {blog_url}
+
+Rules:
+- 150-200 words maximum
+- Start with a hook — a question, surprising stat, or bold statement
+- Write in first person, conversational tone
+- Reference Canadian context (Ontario, CRA, LTB etc.) where relevant
+- End with 1 clear call to action linking to the full article
+- Include 4-5 relevant hashtags on the last line
+- Do NOT use corporate-speak or buzzwords
+
+Return ONLY this JSON:
+{{
+  "post": "the full linkedin post text including hashtags"
+}}"""
+            }
+        ],
+        "temperature": 0.8,
+        "max_tokens": 500,
+        "response_format": {"type": "json_object"}
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+        result = response.json()
+        ai_response = result['choices'][0]['message']['content']
+        post_data = json.loads(ai_response)
+        linkedin_text = post_data.get('post', '')
+        print(f"✅ LinkedIn post generated ({len(linkedin_text)} chars)")
+        return linkedin_text
+    except Exception as e:
+        print(f"⚠️  LinkedIn post generation failed: {e}")
+        return None
+
+
+def upload_image_to_linkedin(access_token, image_url, member_id):
+    """Download image from Unsplash and upload it to LinkedIn"""
+    print("🖼️  Uploading image to LinkedIn...")
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "LinkedIn-Version": "202401"
+    }
+
+    # Step 1 — register the image upload with LinkedIn
+    register_payload = {
+        "initializeUploadRequest": {
+            "owner": f"urn:li:person:{member_id}"
+        }
+    }
+
+    try:
+        register_response = requests.post(
+            "https://api.linkedin.com/rest/images?action=initializeUpload",
+            headers=headers,
+            json=register_payload,
+            timeout=15
+        )
+        register_response.raise_for_status()
+        register_data = register_response.json()
+
+        upload_url = register_data['value']['uploadUrl']
+        image_urn = register_data['value']['image']
+
+        # Step 2 — download image from Unsplash
+        image_response = requests.get(image_url, timeout=15)
+        image_response.raise_for_status()
+        image_bytes = image_response.content
+
+        # Step 3 — upload image bytes to LinkedIn
+        upload_headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/octet-stream"
+        }
+        upload_response = requests.put(
+            upload_url,
+            headers=upload_headers,
+            data=image_bytes,
+            timeout=30
+        )
+        upload_response.raise_for_status()
+
+        print(f"✅ Image uploaded to LinkedIn successfully")
+        return image_urn
+
+    except Exception as e:
+        print(f"⚠️  Image upload failed — will post without image: {e}")
+        return None
+
+
+def post_to_linkedin(post_text, image_url=None):
+    """Publish a post to LinkedIn with optional image"""
+    print("📤 Posting to LinkedIn...")
+
+    access_token = os.environ.get('LINKEDIN_ACCESS_TOKEN')
+    if not access_token:
+        print("⚠️  LINKEDIN_ACCESS_TOKEN not set — skipping LinkedIn post")
+        return False
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+        "LinkedIn-Version": "202401"
+    }
+
+    # Step 1 — get LinkedIn member ID
+    try:
+        profile_response = requests.get(
+            "https://api.linkedin.com/v2/userinfo",
+            headers=headers,
+            timeout=10
+        )
+        profile_response.raise_for_status()
+        profile = profile_response.json()
+        member_id = profile.get('sub')
+
+        if not member_id:
+            print("❌ Could not retrieve LinkedIn member ID")
+            return False
+
+        print(f"👤 LinkedIn member ID found")
+
+    except Exception as e:
+        print(f"❌ Failed to get LinkedIn profile: {e}")
+        return False
+
+    # Step 2 — upload image if available
+    image_urn = None
+    if image_url:
+        image_urn = upload_image_to_linkedin(access_token, image_url, member_id)
+
+    # Step 3 — build post payload
+    if image_urn:
+        # Post with image
+        post_payload = {
+            "author": f"urn:li:person:{member_id}",
+            "lifecycleState": "PUBLISHED",
+            "specificContent": {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {
+                        "text": post_text
+                    },
+                    "shareMediaCategory": "IMAGE",
+                    "media": [
+                        {
+                            "status": "READY",
+                            "media": image_urn
+                        }
+                    ]
+                }
+            },
+            "visibility": {
+                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+            }
+        }
+    else:
+        # Post without image (fallback)
+        post_payload = {
+            "author": f"urn:li:person:{member_id}",
+            "lifecycleState": "PUBLISHED",
+            "specificContent": {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {
+                        "text": post_text
+                    },
+                    "shareMediaCategory": "NONE"
+                }
+            },
+            "visibility": {
+                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+            }
+        }
+
+    # Step 4 — publish
+    try:
+        post_response = requests.post(
+            "https://api.linkedin.com/v2/ugcPosts",
+            headers=headers,
+            json=post_payload,
+            timeout=15
+        )
+        post_response.raise_for_status()
+        print("✅ Posted to LinkedIn successfully!")
+        return True
+
+    except requests.exceptions.HTTPError as e:
+        print(f"❌ LinkedIn post failed: {e}")
+        print(f"Response: {post_response.text}")
+        return False
+    except Exception as e:
+        print(f"❌ LinkedIn post failed: {e}")
+        return False
 
 def get_unsplash_image(query):
     """Fetch relevant image from Unsplash"""
