@@ -341,7 +341,10 @@ Return ONLY this JSON structure (no other text, no markdown):
     }
     
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            print(f"❌ Hashnode status: {response.status_code}")
+            print(f"❌ Hashnode response: {response.text}")
         response.raise_for_status()
         
         result = response.json()
