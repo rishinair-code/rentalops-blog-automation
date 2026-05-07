@@ -511,7 +511,7 @@ def upload_image_to_linkedin(access_token, image_url, member_id):
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
-        "LinkedIn-Version": "202401"
+        "LinkedIn-Version": "202501"
     }
 
     # Step 1 — register the image upload with LinkedIn
@@ -573,7 +573,7 @@ def post_to_linkedin(post_text, image_url=None):
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
         "X-Restli-Protocol-Version": "2.0.0",
-        "LinkedIn-Version": "202401"
+        "LinkedIn-Version": "202501"
     }
 
     # Step 1 — get LinkedIn member ID
