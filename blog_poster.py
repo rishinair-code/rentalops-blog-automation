@@ -504,7 +504,7 @@ Return ONLY this JSON:
         return None
 
 
-def upload_image_to_linkedin(access_token, image_url, member_id):
+def upload_image_to_linkedin(access_token, image_url, org_id):
     """Download image from Unsplash and upload it to LinkedIn"""
     print("🖼️  Uploading image to LinkedIn...")
 
@@ -517,7 +517,7 @@ def upload_image_to_linkedin(access_token, image_url, member_id):
     # Step 1 — register the image upload with LinkedIn
     register_payload = {
         "initializeUploadRequest": {
-            "owner": f"urn:li:person:{member_id}"
+            "owner": f"urn:li:organization:{org_id}"
         }
     }
 
@@ -532,7 +532,7 @@ def upload_image_to_linkedin(access_token, image_url, member_id):
         register_data = register_response.json()
 
         upload_url = register_data['value']['uploadUrl']
-        image_urn = register_data['value']['image']
+        image_urn = upload_image_to_linkedin(access_token, image_url, org_id)
 
         # Step 2 — download image from Unsplash
         image_response = requests.get(image_url, timeout=15)
@@ -565,6 +565,7 @@ def post_to_linkedin(post_text, image_url=None):
     print("📤 Posting to LinkedIn...")
 
     access_token = os.environ.get('LINKEDIN_ACCESS_TOKEN')
+    org_id = os.environ.get('LINKEDIN_ORGANIZATION_ID')
     if not access_token:
         print("⚠️  LINKEDIN_ACCESS_TOKEN not set — skipping LinkedIn post")
         return False
@@ -606,7 +607,7 @@ def post_to_linkedin(post_text, image_url=None):
     if image_urn:
         # Post with image
         post_payload = {
-            "author": f"urn:li:person:{member_id}",
+            "author": f"urn:li:organization:{org_id}",
             "lifecycleState": "PUBLISHED",
             "specificContent": {
                 "com.linkedin.ugc.ShareContent": {
@@ -629,7 +630,7 @@ def post_to_linkedin(post_text, image_url=None):
     else:
         # Post without image (fallback)
         post_payload = {
-            "author": f"urn:li:person:{member_id}",
+            "author": f"urn:li:organization:{org_id}",
             "lifecycleState": "PUBLISHED",
             "specificContent": {
                 "com.linkedin.ugc.ShareContent": {
