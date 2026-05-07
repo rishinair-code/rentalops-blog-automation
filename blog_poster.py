@@ -656,6 +656,11 @@ def post_to_linkedin(post_text, image_url=None):
         print("✅ Posted to LinkedIn successfully!")
         return True
 
+        post_response.raise_for_status()
+        print(f"✅ Posted to LinkedIn successfully!")
+        print(f"Response: {post_response.text}")
+        return True
+    
     except requests.exceptions.HTTPError as e:
         print(f"❌ LinkedIn post failed: {e}")
         print(f"Response: {post_response.text}")
