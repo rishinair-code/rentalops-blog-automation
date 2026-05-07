@@ -794,6 +794,18 @@ def main():
     
     if success:
         save_used_topic(topic)
+
+        # Build the blog URL from the title slug
+        blog_url = f"https://blog.rentalops.ca"
+
+        # Generate LinkedIn post text
+        linkedin_text = generate_linkedin_post(blog_data, blog_url)
+
+        # Post to LinkedIn with the same Unsplash image
+        if linkedin_text:
+            image_url = image_data['url'] if image_data else None
+            post_to_linkedin(linkedin_text, image_url)
+
         print("\n" + "=" * 60)
         print("✅ Blog post automation completed successfully!")
         print("=" * 60)
