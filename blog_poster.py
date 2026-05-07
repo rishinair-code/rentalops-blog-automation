@@ -736,16 +736,24 @@ def publish_to_hashnode(blog_data, image_data):
     }
     """
     
-    variables = {
-        "input": {
-            "title": blog_data['title'],
-            "contentMarkdown": content,
-            "tags": tags,
-            "publicationId": HASHNODE_PUBLICATION_ID,
-            "metaTags": {
-                "description": blog_data['metaDescription']
-            }
+    # Build input separately so coverImageOptions is only added when image exists
+    post_input = {
+        "title": blog_data['title'],
+        "contentMarkdown": content,
+        "tags": tags,
+        "publicationId": HASHNODE_PUBLICATION_ID,
+        "metaTags": {
+            "description": blog_data['metaDescription']
         }
+    }
+
+    if image_data:
+        post_input["coverImageOptions"] = {
+            "coverImageURL": image_data['url']
+        }
+
+    variables = {
+        "input": post_input
     }
     
     payload = {
