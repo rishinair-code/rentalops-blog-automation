@@ -3,120 +3,85 @@ import json
 import requests
 import random
 from datetime import datetime
- 
+
 # API Keys from GitHub Secrets
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
-HASHNODE_API_KEY = os.environ.get('HASHNODE_API_KEY')
-HASHNODE_PUBLICATION_ID = os.environ.get('HASHNODE_PUBLICATION_ID')
-UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
-HASHNODE_BLOG_HOST = os.environ.get('HASHNODE_BLOG_HOST')
 DEVTO_API_KEY = os.environ.get('DEVTO_API_KEY')
- 
+UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
+
+# ─────────────────────────────────────────────
+# PERSONAS
+# ─────────────────────────────────────────────
 PERSONAS = [
     {
-        "name": "Accidental Landlord",
-        "description": "Inherited or bought 1-3 rental units. Self-managing with spreadsheets and e-transfers. Scared of the provincial tribunal. No system, doesn't know the rules, hates chasing rent.",
-        "channels": "Facebook Groups, Reddit r/OntarioLandlord r/PersonalFinanceCanada, Kijiji forums",
-        "tone": "reassuring, plain language, no jargon, step-by-step guidance",
+        "name": "First-Time Landlord",
+        "description": "Someone who recently became a landlord and is overwhelmed by taxes, compliance, and paperwork.",
         "topics": [
-            "what to do when a tenant stops paying rent in Canada",
-            "how to serve an eviction notice correctly in your province",
-            "simple rent tracking system for small Canadian landlords",
-            "provincial rental tribunal process explained for first-time landlords",
-            "Canadian Standard Lease agreements explained simply",
-            "how to handle a tenant maintenance request legally in Canada",
-            "what landlords must disclose before signing a lease in Canada",
-            "e-transfer rent collection risks and better alternatives for Canadian landlords",
-            "how to screen tenants legally under Canadian human rights law",
-            "what happens if you don't use your province's standard lease form",
-            "rent arrears process in BC vs Ontario vs Alberta — key differences",
-            "first-time landlord checklist for Canadian rental properties"
-        ]
+            "what expenses can Canadian landlords deduct on their taxes",
+            "how to fill out the T776 rental income form in Canada",
+            "Ontario landlord obligations under the Residential Tenancies Act",
+            "how to screen tenants legally in Canada",
+            "security deposits rules for Ontario landlords",
+            "first-year mistakes new Canadian landlords make",
+            "how to set rent price for your first rental property in Canada",
+            "what is the landlord and tenant board and how does it work",
+            "how to write a lease agreement in Ontario",
+            "CRA audit risk for rental income — what triggers it",
+        ],
     },
     {
         "name": "Portfolio Builder",
-        "description": "Growing intentionally with 4-15 units across one or more Canadian provinces. Uses WhatsApp, spreadsheets, and bank alerts. Wants to look professional and save admin time. Pain: no cross-unit visibility, manual tenant screening, tax prep is a mess.",
-        "channels": "BiggerPockets Canada, LinkedIn, real estate investor meetups, YouTube, REIN",
-        "tone": "professional, data-driven, efficiency-focused, respects their time",
+        "description": "A landlord with 2–10 properties looking to scale efficiently and minimize tax burden.",
         "topics": [
-            "how to track expenses across multiple rental properties in Canada",
-            "tenant screening checklist for Canadian landlords with multiple units",
-            "CRA rental income rules every Canadian landlord must know",
-            "how to prepare for tax season as a small portfolio landlord in Canada",
+            "how to track rental income and expenses across multiple properties",
+            "capital cost allowance for Canadian rental properties explained",
+            "GST HST implications for Canadian landlords — what you need to know",
+            "how to incorporate your rental properties in Canada",
             "automating rent collection across multiple Canadian properties",
-            "provincial rent increase guidelines across Canada for 2025",
-            "capital expense vs operating expense for Canadian rental properties",
-            "how to scale from 3 to 10 rental units without losing control",
-            "cross-unit maintenance tracking for growing Canadian landlords",
-            "how to create a professional landlord system without expensive US software",
-            "rental property depreciation (CCA) rules for Canadian landlords",
-            "GST HST implications for Canadian landlords — what you need to know"
-        ]
+            "refinancing rental properties in Canada — tax implications",
+            "how to use a holding company for rental properties in Canada",
+            "inter-provincial landlord rules if you own properties in multiple provinces",
+            "hiring a property manager vs self-managing — tax and cost comparison",
+            "year-end tax checklist for Canadian landlords with multiple properties",
+        ],
+    },
+    {
+        "name": "Accidental Landlord",
+        "description": "Someone renting out a property by necessity — inherited home, relocated for work, couldn't sell.",
+        "topics": [
+            "tax rules for renting out your principal residence in Canada",
+            "how to report rental income if you only rented part of the year",
+            "renting out your basement suite in Canada — what you need to know",
+            "capital gains implications when you sell a property you rented out",
+            "what happens if you don't report rental income to CRA",
+            "short-term vs long-term rental tax rules in Canada",
+            "Airbnb tax rules for Canadian landlords",
+            "how to convert rental property back to personal use in Canada",
+            "insurance requirements when renting your home in Canada",
+            "CRA principal residence exemption — how it interacts with rental income",
+        ],
     },
     {
         "name": "Part-Time Property Manager",
-        "description": "Manages 15-50 units for self plus family or friends across Canada. Paying in USD for US tools that don't understand Canadian provincial law. Needs owner statements, e-signature leases, provincial tribunal forms built in.",
-        "channels": "LPMA, FRPO, IPOANS, SKLA, LinkedIn, local REIN chapters, REIC",
-        "tone": "authoritative, compliance-focused, efficiency and professionalism",
+        "description": "Someone managing properties for family or as a side income alongside a full-time job.",
         "topics": [
+            "how rental income affects your tax bracket in Canada",
+            "deducting home office expenses as a landlord in Canada",
+            "record keeping requirements for Canadian landlords",
+            "how to split rental income with a spouse in Canada",
+            "mileage and travel deductions for Canadian landlords",
+            "using software vs spreadsheets for rental property accounting",
             "why US property management software fails Canadian landlords",
-            "provincial rental tribunal forms every Canadian property manager needs",
-            "how to create owner statements for informal property management in Canada",
-            "eviction notice types by province — BC RTB vs Ontario LTB vs Alberta RTDRS",
-            "Canadian rent increase rules vs US states — key differences",
-            "how to manage properties for family members legally in Canada",
-            "e-signature lease agreements and legal validity across Canadian provinces",
-            "EFT rent collection in CAD — why USD tools create problems",
-            "provincial landlord association compliance checklist for Canadian PMs",
-            "rent control rules by province — which provinces have it and which don't",
-            "how to handle security deposits legally in each Canadian province",
-            "owner reporting best practices for informal Canadian property managers"
-        ]
-    }
+            "how to prepare for tax season as a part-time landlord",
+            "deducting professional fees legal and accounting for landlords",
+            "passive income rules and rental income — what CRA says",
+        ],
+    },
 ]
- 
-CANADIAN_DIFFERENTIATOR = """
-RentalOps is built specifically for Canadian landlords — not adapted from a US tool.
- 
-Key Canadian realities to reference where relevant:
-- FEDERAL: CRA rental income reporting, capital cost allowance (CCA), GST/HST rules
-- ONTARIO: LTB (Landlord and Tenant Board), N4/N12/N13 forms, Ontario Standard Lease, rent control exemptions for post-2018 units
-- BC: Residential Tenancy Branch (RTB), BC Standard Lease, rent increase rules, security deposit limits (half month)
-- ALBERTA: RTDRS (Residential Tenancy Dispute Resolution Service), no rent control, fixed vs periodic tenancy rules
-- QUEBEC: Tribunal administratif du logement (TAL), French-language lease requirements, strict rent increase process
-- OTHER PROVINCES: Reference the relevant provincial tribunal and rules for Manitoba (RTB), Saskatchewan (SKLA), Nova Scotia, New Brunswick, PEI, Newfoundland as appropriate
- 
-Always position US tools (DoorLoop, Buildium, AppFolio) as missing these Canadian realities.
-Always write amounts in CAD. Always reference Canadian banking (EFT, Interac e-Transfer).
-"""
- 
-RENTALOPS_FEATURES = """
-RentalOps (rentalops.ca) is a Canadian-built rental expense and tax tracking tool — not adapted from a US product. Built specifically for landlords who need to file CRA Form T776.
- 
-FEATURES TO REFERENCE NATURALLY WHERE RELEVANT:
-- CRA AUTO-CATEGORIZATION: Automatically sorts every expense into the correct CRA category and maps it to the right T776 line (e.g., line 9270 for professional fees, 9200 for repairs). No tax knowledge required from the landlord.
-- RECEIPT CAPTURE: Snap a photo of any receipt from your phone in ~15 seconds. Stored permanently — nothing gets lost before tax season.
-- PORTFOLIO HEALTH DASHBOARD: Real-time view of gross income, net profit, and top deductions across all properties year-round.
-- MISSED DEDUCTION FINDER: Flags deductions landlords commonly miss — helps maximize the annual refund.
-- ACCOUNTANT-READY EXPORT: One-click export produces a clean, audit-ready file organized by CRA category. No more handing over a shoebox of receipts.
-- MULTI-USER (Pro): Lets a spouse, partner, or bookkeeper access the same account.
-- AI INSIGHTS (Pro): Deeper financial analysis across large or multi-property portfolios.
- 
-PRICING (always mention the free trial when referencing cost):
-- Starter: $6.99/mo — 1 property, T776 summary, income/expense tracking
-- Core: $9.99/mo — up to 5 properties, receipt upload, priority support
-- Pro: $19.99/mo — unlimited properties, AI insights, multi-user access
-- All plans: 7-day free trial, no credit card required
- 
-INTEGRATION RULES:
-- Mention RentalOps once or twice per post maximum
-- The mention must connect directly to the topic — never feel like an ad
-- Always link as [RentalOps](https://rentalops.ca) when mentioned
-- Lead with the problem the feature solves, then introduce RentalOps as the solution
-"""
- 
-# ── Topic tracking ──────────────────────────────────────────────────────────
- 
+
+# ─────────────────────────────────────────────
+# USED TOPICS
+# ─────────────────────────────────────────────
 def get_used_topics():
     try:
         if os.path.exists("used_topics.json"):
@@ -124,13 +89,14 @@ def get_used_topics():
                 used = json.load(f)
             print(f"📋 Found {len(used)} previously used topics")
             return used
-        print("📋 No used_topics.json found — starting fresh")
-        return []
+        else:
+            print("📋 No used_topics.json found — starting fresh")
+            return []
     except Exception as e:
         print(f"⚠️  Could not read used topics: {e}")
         return []
- 
- 
+
+
 def save_used_topic(topic):
     try:
         used = get_used_topics()
@@ -141,211 +107,24 @@ def save_used_topic(topic):
         print(f"✅ Topic saved: {topic[:50]}")
     except Exception as e:
         print(f"⚠️  Could not save used topic: {e}")
- 
-# ── Persona & topic selection ────────────────────────────────────────────────
- 
+
+
+# ─────────────────────────────────────────────
+# PERSONA SELECTION
+# ─────────────────────────────────────────────
 def get_current_persona():
-    week_number = datetime.now().isocalendar()[1]
-    return PERSONAS[week_number % len(PERSONAS)]
- 
- 
-def should_include_roi_section():
-    return datetime.now().isocalendar()[1] % 3 == 0
- 
-# ── Cross-linking ────────────────────────────────────────────────────────────
- 
-def fetch_recent_posts():
-    if not HASHNODE_BLOG_HOST:
-        print("⚠️  HASHNODE_BLOG_HOST not set — skipping cross-link fetch")
-        return []
-    try:
-        query = """
-        query GetRecentPosts($host: String!) {
-            publication(host: $host) {
-                posts(first: 20) {
-                    edges { node { title url } }
-                }
-            }
-        }
-        """
-        response = requests.post(
-            "https://gql.hashnode.com",
-            headers={"Authorization": HASHNODE_API_KEY, "Content-Type": "application/json"},
-            json={"query": query, "variables": {"host": HASHNODE_BLOG_HOST}},
-            timeout=10
-        )
-        response.raise_for_status()
-        result = response.json()
-        if 'errors' in result:
-            print(f"⚠️  Cross-link fetch error: {result['errors']}")
-            return []
-        edges = result['data']['publication']['posts']['edges']
-        posts = [{"title": e['node']['title'], "url": e['node']['url']} for e in edges]
-        print(f"📚 Found {len(posts)} existing posts available for cross-linking")
-        return posts
-    except Exception as e:
-        print(f"⚠️  Cross-link fetch failed (non-critical): {e}")
-        return []
- 
- 
-def find_related_post(posts, topic):
-    if not posts:
-        return None
-    stopwords = {'a', 'an', 'the', 'and', 'or', 'for', 'in', 'of', 'to', 'vs', 'how', 'what', 'why', 'your'}
-    topic_words = set(topic.lower().split()) - stopwords
-    best_match, best_score = None, 0
-    for post in posts:
-        score = len(topic_words & (set(post['title'].lower().split()) - stopwords))
-        if score > best_score:
-            best_score, best_match = score, post
-    if best_score >= 1:
-        print(f"🔗 Cross-link match found: '{best_match['title']}'")
-        return best_match
-    print("🔗 No keyword match — using most recent post as cross-link")
-    return posts[0]
- 
-# ── Content generation ───────────────────────────────────────────────────────
- 
-def generate_blog_content():
-    persona = get_current_persona()
- 
-    used_topics = get_used_topics()
-    available_topics = [t for t in persona["topics"] if t not in used_topics]
-    if not available_topics:
-        print(f"🔄 All topics for {persona['name']} used — resetting")
-        available_topics = persona["topics"]
- 
-    topic = available_topics[datetime.now().timetuple().tm_yday % len(available_topics)]
- 
-    print(f"🎯 Target persona: {persona['name']}")
-    print(f"🤖 Generating content about: {topic}")
- 
-    recent_posts = fetch_recent_posts()
-    related_post = find_related_post(recent_posts, topic)
-    include_roi = should_include_roi_section()
-    print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
- 
-    crosslink_instruction = ""
-    if related_post:
-        crosslink_instruction = f"""
-CROSS-LINKING (mandatory):
-Naturally link to this related post somewhere in the article body where it genuinely fits:
-Title: "{related_post['title']}"
-URL: {related_post['url']}
-Use descriptive anchor text — never just "click here".
-"""
- 
-    roi_instruction = ""
-    if include_roi:
-        roi_instruction = """
-COST/ROI SECTION (mandatory for this post):
-Include a section titled "## What This Mistake Actually Costs You" or "## Is [Tool/System] Worth It? A Real-Money Breakdown".
-Use realistic CAD figures. Show cost of manual/wrong approach vs. doing it properly.
-End the section with a natural mention of how [RentalOps](https://rentalops.ca) addresses this cost.
-"""
- 
-    payload = {
-        "model": "llama-3.3-70b-versatile",
-        "messages": [
-            {
-                "role": "system",
-                "content": f"""You are a content writer for RentalOps, a property management tool built specifically for Canadian landlords — not adapted from a US product.
- 
-TARGET READER: {persona['name']}
-WHO THEY ARE: {persona['description']}
-WHERE THEY HANG OUT: {persona['channels']}
-TONE TO USE: {persona['tone']}
- 
-CANADIAN CONTEXT (always apply where relevant):
-{CANADIAN_DIFFERENTIATOR}
- 
-PRODUCT CONTEXT (reference naturally, never forced):
-{RENTALOPS_FEATURES}
- 
-{crosslink_instruction}
-{roi_instruction}
- 
-WRITING RULES:
-- Write for Canadian landlords. Reference correct provincial tribunal, legislation, and rules.
-- Never give generic US advice. Everything must be Canada-specific.
-- Do not recommend US tools as viable options for Canadian landlords.
-- You MUST respond with ONLY valid JSON. No markdown, no code blocks, no explanations. Raw JSON only."""
-            },
-            {
-                "role": "user",
-                "content": f"""Write a blog post targeting {persona['name']} landlords about: {topic}
- 
-Return ONLY this JSON structure:
-{{
-  "title": "SEO-optimized title written for {persona['name']} in Canada",
-  "metaDescription": "Compelling 140-150 character description for this persona",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "content": "Full article in markdown with ## headers (900-1200 words). Written in {persona['tone']} tone. Canada-specific throughout.",
-  "persona": "{persona['name']}"
-}}"""
-            }
-        ],
-        "temperature": 0.7,
-        "max_tokens": 4000,
-        "response_format": {"type": "json_object"}
-    }
- 
-    try:
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=30
-        )
-        response.raise_for_status()
-        ai_response = response.json()['choices'][0]['message']['content']
-        print(f"📥 Raw AI response (first 200 chars): {ai_response[:200]}...")
- 
-        cleaned = ai_response.strip()
-        if cleaned.startswith('```'):
-            lines, cleaned_lines, in_block = cleaned.split('\n'), [], False
-            for line in lines:
-                if line.strip().startswith('```'):
-                    in_block = not in_block
-                    continue
-                if not in_block:
-                    cleaned_lines.append(line)
-            cleaned = '\n'.join(cleaned_lines).strip()
- 
-        start, end = cleaned.find('{'), cleaned.rfind('}')
-        if start == -1 or end == -1:
-            print("❌ No JSON object found in response")
-            return None, None
- 
-        blog_data = json.loads(cleaned[start:end + 1])
-        missing = [f for f in ['title', 'metaDescription', 'tags', 'content'] if f not in blog_data]
-        if missing:
-            print(f"❌ Missing required fields: {missing}")
-            return None, None
- 
-        if not isinstance(blog_data['tags'], list):
-            blog_data['tags'] = []
-        blog_data['tags'] = blog_data['tags'][:5]
- 
-        print("✅ Content generated successfully")
-        print(f"   Persona: {persona['name']}")
-        print(f"   Title: {blog_data['title'][:60]}...")
-        print(f"   Tags: {', '.join(blog_data['tags'])}")
-        print(f"   Content length: {len(blog_data['content'])} characters")
-        return blog_data, topic
- 
-    except Exception as e:
-        print(f"❌ Error generating content: {e}")
-        import traceback
-        print(traceback.format_exc())
-        return None, None
- 
-# ── Image ────────────────────────────────────────────────────────────────────
- 
+    day_of_year = datetime.now().timetuple().tm_yday
+    persona_index = day_of_year % len(PERSONAS)
+    return PERSONAS[persona_index]
+
+
+# ─────────────────────────────────────────────
+# IMAGE QUERY GENERATOR
+# ─────────────────────────────────────────────
 def generate_image_query(title):
     topic_map = [
-        (["eviction", "tribunal", "ltb", "rtb", "notice"], "tenant landlord dispute paperwork"),
-        (["tax", "cra", "t776", "deduction", "refund", "cca", "gst", "hst"], "canadian tax documents accounting"),
+        (["eviction", "tribunal", "LTB", "RTB", "notice"], "tenant landlord dispute paperwork"),
+        (["tax", "CRA", "T776", "deduction", "refund", "CCA"], "canadian tax documents accounting"),
         (["receipt", "expense", "tracking", "bookkeeping"], "receipt invoice bookkeeping desk"),
         (["rent", "collection", "payment", "arrears"], "rent payment money transfer"),
         (["screening", "tenant", "application"], "rental application interview"),
@@ -355,64 +134,194 @@ def generate_image_query(title):
         (["scale", "portfolio", "multiple", "units", "properties"], "apartment building investment"),
         (["software", "tool", "app", "system", "spreadsheet"], "property management laptop"),
         (["mortgage", "interest", "financing", "bank"], "canadian real estate mortgage"),
-        (["deposit"], "keys apartment handover"),
+        (["security deposit", "deposit"], "keys apartment handover"),
+        (["GST", "HST", "sales tax"], "canadian tax forms accounting"),
+        (["incorporate", "holding company", "corporation"], "business incorporation documents"),
+        (["Airbnb", "short-term", "vacation rental"], "vacation rental property"),
+        (["principal residence", "capital gains"], "canadian home ownership"),
+        (["basement", "suite", "secondary unit"], "basement apartment rental"),
     ]
+
     title_lower = title.lower()
     for keywords, query in topic_map:
-        if any(k in title_lower for k in keywords):
+        if any(k.lower() in title_lower for k in keywords):
             print(f"🖼️  Image query: '{query}'")
             return query
+
     fallbacks = [
         "canadian rental property exterior",
         "apartment building Canada",
         "landlord property keys",
         "rental home neighbourhood Canada",
-        "residential property investment"
+        "residential property investment",
     ]
     query = random.choice(fallbacks)
     print(f"🖼️  Image query (fallback): '{query}'")
     return query
- 
- 
+
+
+# ─────────────────────────────────────────────
+# UNSPLASH
+# ─────────────────────────────────────────────
 def get_unsplash_image(query):
     print(f"🖼️  Fetching image for: {query}")
+    if not UNSPLASH_ACCESS_KEY:
+        print("⚠️  UNSPLASH_ACCESS_KEY not set — skipping image")
+        return None
+
     try:
         response = requests.get(
             "https://api.unsplash.com/photos/random",
-            params={"query": query, "orientation": "landscape", "client_id": UNSPLASH_ACCESS_KEY}
+            params={"query": query, "orientation": "landscape", "content_filter": "high"},
+            headers={"Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}"},
+            timeout=15,
         )
         response.raise_for_status()
         data = response.json()
-        print(f"✅ Image found by {data['user']['name']}")
-        return {
-            'url': data['urls']['regular'],
-            'credit': f"Photo by [{data['user']['name']}]({data['user']['links']['html']}) on [Unsplash](https://unsplash.com)"
-        }
+        image_url = data["urls"]["regular"]
+        photographer = data["user"]["name"]
+        credit = f"Photo by [{photographer}](https://unsplash.com/@{data['user']['username']}) on [Unsplash](https://unsplash.com)"
+        print(f"✅ Image found by {photographer}")
+        return {"url": image_url, "credit": credit}
     except Exception as e:
-        print(f"⚠️  Error fetching image: {e}")
+        print(f"⚠️  Unsplash fetch failed: {e}")
         return None
- 
-# ── DEVTO ─────────────────────────────────────────────────────────────────
- 
+
+
+# ─────────────────────────────────────────────
+# CONTENT GENERATION
+# ─────────────────────────────────────────────
+def generate_blog_content():
+    persona = get_current_persona()
+    print(f"🎯 Target persona: {persona['name']}")
+
+    used_topics = get_used_topics()
+    available_topics = [t for t in persona["topics"] if t not in used_topics]
+
+    if not available_topics:
+        print(f"🔄 All topics for {persona['name']} used — resetting")
+        available_topics = persona["topics"]
+
+    day_of_year = datetime.now().timetuple().tm_yday
+    topic_index = day_of_year % len(available_topics)
+    topic = available_topics[topic_index]
+
+    print(f"🤖 Generating content about: {topic}")
+
+    # Decide if this post should include an ROI/cost section
+    include_roi = random.random() < 0.3
+    roi_instruction = ""
+    if include_roi:
+        roi_instruction = """
+- Include a section comparing the cost of doing this manually vs using RentalOps (be specific with time estimates and dollar amounts)
+- Mention RentalOps pricing starting at $6.99/month where relevant"""
+
+    print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": [
+            {
+                "role": "system",
+                "content": f"""You are a content writer for RentalOps, a Canadian landlord expense tracking and tax preparation tool.
+Write authoritative, practical blog posts aimed at Canadian landlords.
+Always reference Canadian-specific context: CRA, T776, Ontario LTB, provincial rules, CAD amounts.
+RentalOps helps landlords track income/expenses, prepare for tax season, and stay CRA-compliant.
+Target persona: {persona['name']} — {persona['description']}
+You MUST respond with ONLY valid JSON. No markdown, no code blocks. Raw JSON only.""",
+            },
+            {
+                "role": "user",
+                "content": f"""Write a complete blog post about: {topic}
+
+Requirements:
+- Title: compelling, SEO-friendly, Canadian context
+- Meta description: 150-160 characters
+- Content: 800-1200 words in markdown format
+- Use H2 and H3 headers
+- Include practical, actionable advice
+- Reference CRA rules, provincial regulations where applicable
+- Mention RentalOps naturally 2-3 times as a solution tool (not spammy)
+- End with a clear call to action to try RentalOps{roi_instruction}
+- Tags: 5 relevant tags for Canadian landlord/real estate content
+
+Return ONLY this JSON structure:
+{{
+  "title": "...",
+  "metaDescription": "...",
+  "content": "... full markdown content ...",
+  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "persona": "{persona['name']}"
+}}""",
+            },
+        ],
+        "temperature": 0.7,
+        "max_tokens": 2000,
+        "response_format": {"type": "json_object"},
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response.raise_for_status()
+        result = response.json()
+        ai_response = result["choices"][0]["message"]["content"]
+
+        print(f"📥 Raw AI response (first 200 chars): {ai_response[:200]}")
+
+        blog_data = json.loads(ai_response)
+
+        required_fields = ["title", "metaDescription", "content", "tags"]
+        for field in required_fields:
+            if field not in blog_data:
+                print(f"❌ Missing required field: {field}")
+                return None, None
+
+        print(f"✅ Content generated successfully")
+        print(f"   Persona: {persona['name']}")
+        print(f"   Title: {blog_data['title'][:60]}...")
+        print(f"   Tags: {', '.join(blog_data['tags'])}")
+        print(f"   Content length: {len(blog_data['content'])} characters")
+
+        return blog_data, topic
+
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON parsing error: {e}")
+        return None, None
+    except Exception as e:
+        print(f"❌ Content generation failed: {e}")
+        return None, None
+
+
+# ─────────────────────────────────────────────
+# PUBLISH TO DEV.TO
+# ─────────────────────────────────────────────
 def publish_to_devto(blog_data, image_data):
-    """Publish blog post to Dev.to"""
     print("📤 Publishing to Dev.to...")
 
-    content = blog_data['content']
+    content = blog_data["content"]
     if image_data:
         content = f"{content}\n\n---\n\n*{image_data['credit']}*"
 
+    # Dev.to tags: lowercase, no spaces or hyphens, max 20 chars, max 4 tags
+    def clean_tag(tag):
+        return tag.lower().replace(" ", "").replace("-", "").replace("/", "")[:20]
+
+    tags = [clean_tag(t) for t in blog_data.get("tags", [])[:4]]
+
     article_payload = {
         "article": {
-            "title": blog_data['title'],
+            "title": blog_data["title"],
             "body_markdown": content,
             "published": True,
-            "description": blog_data['metaDescription'],
-            "tags": [
-                tag.lower().replace(' ', '').replace('-', '')[:20]
-                for tag in blog_data.get('tags', [])[:4]
-            ],
-            "main_image": image_data['url'] if image_data else None
+            "description": blog_data["metaDescription"],
+            "tags": tags,
+            "main_image": image_data["url"] if image_data else None,
         }
     }
 
@@ -421,10 +330,10 @@ def publish_to_devto(blog_data, image_data):
             "https://dev.to/api/articles",
             headers={
                 "api-key": DEVTO_API_KEY,
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             },
             json=article_payload,
-            timeout=30
+            timeout=30,
         )
 
         if response.status_code not in [200, 201]:
@@ -434,7 +343,7 @@ def publish_to_devto(blog_data, image_data):
         response.raise_for_status()
         result = response.json()
 
-        post_url = result.get('url', 'https://dev.to')
+        post_url = result.get("url", "https://dev.to")
         print(f"✅ Post published successfully!")
         print(f"📝 Title: {result['title']}")
         print(f"🔗 URL: {post_url}")
@@ -443,174 +352,257 @@ def publish_to_devto(blog_data, image_data):
     except Exception as e:
         print(f"❌ Error publishing to Dev.to: {e}")
         return False, None
- 
-# ── LinkedIn ─────────────────────────────────────────────────────────────────
- 
+
+
+# ─────────────────────────────────────────────
+# LINKEDIN
+# ─────────────────────────────────────────────
 def generate_linkedin_post(blog_data, blog_url):
     print("🔗 Generating LinkedIn post...")
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
     payload = {
         "model": "llama-3.3-70b-versatile",
         "messages": [
             {
                 "role": "system",
-                "content": "You are a LinkedIn content writer for RentalOps, a Canadian landlord tax and expense tracking tool. Write punchy, engaging posts that feel human. Respond with ONLY valid JSON. No markdown, no code blocks."
+                "content": """You are a LinkedIn content writer for RentalOps, a Canadian landlord tax and expense tracking tool.
+Write punchy, engaging LinkedIn posts that feel human — not like marketing copy.
+You MUST respond with ONLY valid JSON. No markdown, no code blocks. Raw JSON only.""",
             },
             {
                 "role": "user",
                 "content": f"""Write a LinkedIn post based on this blog article.
- 
+
 Blog title: {blog_data['title']}
 Blog summary: {blog_data['metaDescription']}
 Target persona: {blog_data.get('persona', 'Canadian landlord')}
 Full article URL: {blog_url}
- 
+
 Rules:
 - 150-200 words maximum
 - Start with a hook — a question, surprising stat, or bold statement
-- Conversational, first person tone
-- Reference Canadian context (CRA, LTB, Ontario etc.) where relevant
+- Write in first person, conversational tone
+- Reference Canadian context (Ontario, CRA, LTB etc.) where relevant
 - End with 1 clear call to action linking to the full article
 - Include 4-5 relevant hashtags on the last line
- 
+- Do NOT use corporate-speak or buzzwords
+
 Return ONLY this JSON:
-{{"post": "the full linkedin post text including hashtags"}}"""
-            }
+{{
+  "post": "the full linkedin post text including hashtags"
+}}""",
+            },
         ],
         "temperature": 0.8,
         "max_tokens": 500,
-        "response_format": {"type": "json_object"}
+        "response_format": {"type": "json_object"},
     }
+
     try:
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json=payload,
-            timeout=30
-        )
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
-        linkedin_text = json.loads(response.json()['choices'][0]['message']['content']).get('post', '')
+        result = response.json()
+        ai_response = result["choices"][0]["message"]["content"]
+        post_data = json.loads(ai_response)
+        linkedin_text = post_data.get("post", "")
         print(f"✅ LinkedIn post generated ({len(linkedin_text)} chars)")
         return linkedin_text
     except Exception as e:
         print(f"⚠️  LinkedIn post generation failed: {e}")
         return None
- 
- 
+
+
 def upload_image_to_linkedin(access_token, image_url, org_id):
     print("🖼️  Uploading image to LinkedIn...")
+
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
         "LinkedIn-Version": "202501",
-        "X-Restli-Protocol-Version": "2.0.0"
     }
+
+    register_payload = {
+        "initializeUploadRequest": {
+            "owner": f"urn:li:organization:{org_id}"
+        }
+    }
+
     try:
-        # Step 1 — register upload
-        reg = requests.post(
+        register_response = requests.post(
             "https://api.linkedin.com/rest/images?action=initializeUpload",
             headers=headers,
-            json={"initializeUploadRequest": {"owner": f"urn:li:organization:{org_id}"}},
-            timeout=15
+            json=register_payload,
+            timeout=15,
         )
-        reg.raise_for_status()
-        reg_data = reg.json()
-        upload_url = reg_data['value']['uploadUrl']
-        image_urn = reg_data['value']['image']  # extract URN from response
- 
-        # Step 2 — download image bytes
-        image_bytes = requests.get(image_url, timeout=15).content
- 
-        # Step 3 — upload to LinkedIn
-        requests.put(
+        register_response.raise_for_status()
+        register_data = register_response.json()
+
+        upload_url = register_data["value"]["uploadUrl"]
+        image_urn = register_data["value"]["image"]
+
+        # Download image from Unsplash
+        image_response = requests.get(image_url, timeout=15)
+        image_response.raise_for_status()
+        image_bytes = image_response.content
+
+        # Upload to LinkedIn
+        upload_response = requests.put(
             upload_url,
-            headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/octet-stream"},
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/octet-stream",
+            },
             data=image_bytes,
-            timeout=30
-        ).raise_for_status()
- 
+            timeout=30,
+        )
+        upload_response.raise_for_status()
+
         print("✅ Image uploaded to LinkedIn successfully")
         return image_urn
+
     except Exception as e:
         print(f"⚠️  Image upload failed — will post without image: {e}")
         return None
- 
- 
+
+
 def post_to_linkedin(post_text, image_url=None):
     print("📤 Posting to LinkedIn...")
- 
-    access_token = os.environ.get('LINKEDIN_ACCESS_TOKEN')
-    org_id = os.environ.get('LINKEDIN_ORGANIZATION_ID')
- 
+
+    access_token = os.environ.get("LINKEDIN_ACCESS_TOKEN")
+    org_id = os.environ.get("LINKEDIN_ORGANIZATION_ID")
+
     if not access_token:
-        print("⚠️  LINKEDIN_ACCESS_TOKEN not set — skipping")
+        print("⚠️  LINKEDIN_ACCESS_TOKEN not set — skipping LinkedIn post")
         return False
+
     if not org_id:
-        print("⚠️  LINKEDIN_ORGANIZATION_ID not set — skipping")
+        print("⚠️  LINKEDIN_ORGANIZATION_ID not set — skipping LinkedIn post")
         return False
- 
+
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
         "X-Restli-Protocol-Version": "2.0.0",
-        "LinkedIn-Version": "202501"
+        "LinkedIn-Version": "202501",
     }
- 
-    image_urn = upload_image_to_linkedin(access_token, image_url, org_id) if image_url else None
- 
-    post_payload = {
-        "author": f"urn:li:organization:{org_id}",
-        "lifecycleState": "PUBLISHED",
-        "specificContent": {
-            "com.linkedin.ugc.ShareContent": {
-                "shareCommentary": {"text": post_text},
-                "shareMediaCategory": "IMAGE" if image_urn else "NONE",
-                **({"media": [{"status": "READY", "media": image_urn}]} if image_urn else {})
-            }
-        },
-        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
-    }
- 
+
+    # Get member ID (still needed for userinfo check)
+    try:
+        profile_response = requests.get(
+            "https://api.linkedin.com/v2/userinfo",
+            headers=headers,
+            timeout=10,
+        )
+        profile_response.raise_for_status()
+        profile = profile_response.json()
+        member_id = profile.get("sub")
+        if not member_id:
+            print("❌ Could not retrieve LinkedIn member ID")
+            return False
+        print("👤 LinkedIn member ID found")
+    except Exception as e:
+        print(f"❌ Failed to get LinkedIn profile: {e}")
+        return False
+
+    # Upload image if available
+    image_urn = None
+    if image_url:
+        image_urn = upload_image_to_linkedin(access_token, image_url, org_id)
+
+    # Build post payload
+    author_urn = f"urn:li:organization:{org_id}"
+
+    if image_urn:
+        post_payload = {
+            "author": author_urn,
+            "lifecycleState": "PUBLISHED",
+            "specificContent": {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {"text": post_text},
+                    "shareMediaCategory": "IMAGE",
+                    "media": [{"status": "READY", "media": image_urn}],
+                }
+            },
+            "visibility": {
+                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+            },
+        }
+    else:
+        post_payload = {
+            "author": author_urn,
+            "lifecycleState": "PUBLISHED",
+            "specificContent": {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {"text": post_text},
+                    "shareMediaCategory": "NONE",
+                }
+            },
+            "visibility": {
+                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+            },
+        }
+
     try:
         post_response = requests.post(
             "https://api.linkedin.com/v2/ugcPosts",
             headers=headers,
             json=post_payload,
-            timeout=15
+            timeout=15,
         )
-        print(f"LinkedIn response status: {post_response.status_code}")
-        print(f"LinkedIn response body: {post_response.text}")
-        post_response.raise_for_status()
+        if post_response.status_code not in [200, 201]:
+            print(f"❌ LinkedIn post failed: {post_response.status_code}")
+            print(f"❌ Response: {post_response.text}")
+            return False
+
         print("✅ Posted to LinkedIn successfully!")
         return True
+
     except Exception as e:
         print(f"❌ LinkedIn post failed: {e}")
         return False
- 
-# ── Main ─────────────────────────────────────────────────────────────────────
- 
+
+
+# ─────────────────────────────────────────────
+# MAIN
+# ─────────────────────────────────────────────
 def main():
     print("=" * 60)
     print("🚀 RentalOps Blog Automation Starting...")
     print("=" * 60)
- 
-    if not all([GROQ_API_KEY, HASHNODE_API_KEY, HASHNODE_PUBLICATION_ID, UNSPLASH_ACCESS_KEY]):
-        print("❌ Missing API keys! Please check GitHub Secrets.")
-        return
- 
+
+    # Generate content
     blog_data, topic = generate_blog_content()
     if not blog_data or not topic:
         print("❌ Failed to generate content. Exiting.")
+        print("\n" + "=" * 60)
+        print("❌ Blog post automation failed.")
+        print("=" * 60)
         return
- 
-    image_data = get_unsplash_image(generate_image_query(blog_data['title']))
-    success, post_url = publish_to_hashnode(blog_data, image_data)
- 
+
+    # Get cover image
+    image_search_query = generate_image_query(blog_data["title"])
+    image_data = get_unsplash_image(image_search_query)
+
+    # Publish to Dev.to
+    success, post_url = publish_to_devto(blog_data, image_data)
+
     if success:
         save_used_topic(topic)
-        blog_url = post_url if post_url else "https://blog.rentalops.ca"
+
+        blog_url = post_url if post_url else "https://dev.to"
+
+        # LinkedIn
         linkedin_text = generate_linkedin_post(blog_data, blog_url)
         if linkedin_text:
-            post_to_linkedin(linkedin_text, image_data['url'] if image_data else None)
+            image_url = image_data["url"] if image_data else None
+            post_to_linkedin(linkedin_text, image_url)
+
         print("\n" + "=" * 60)
         print("✅ Blog post automation completed successfully!")
         print("=" * 60)
@@ -618,7 +610,7 @@ def main():
         print("\n" + "=" * 60)
         print("❌ Blog post automation failed.")
         print("=" * 60)
- 
- 
+
+
 if __name__ == "__main__":
     main()
