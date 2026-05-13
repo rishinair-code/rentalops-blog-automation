@@ -567,6 +567,33 @@ def post_to_linkedin(post_text, image_url=None):
         print(f"❌ LinkedIn post failed: {e}")
         return False
 
+def save_post_to_repo(blog_data, image_data, post_slug):
+    """Save the blog post as a JSON file in the posts/ directory"""
+    try:
+        os.makedirs("posts", exist_ok=True)
+
+        post = {
+            "title": blog_data["title"],
+            "metaDescription": blog_data["metaDescription"],
+            "content": blog_data["content"],
+            "tags": blog_data.get("tags", []),
+            "persona": blog_data.get("persona", ""),
+            "coverImage": image_data["url"] if image_data else None,
+            "coverImageCredit": image_data["credit"] if image_data else None,
+            "publishedAt": datetime.now().isoformat(),
+            "slug": post_slug,
+        }
+
+        filename = f"posts/{post_slug}.json"
+        with open(filename, "w") as f:
+            json.dump(post, f, indent=2)
+
+        print(f"✅ Post saved to {filename}")
+        return filename
+
+    except Exception as e:
+        print(f"⚠️  Could not save post to repo: {e}")
+        return None
 
 # ─────────────────────────────────────────────
 # MAIN
@@ -590,27 +617,34 @@ def main():
     image_data = get_unsplash_image(image_search_query)
 
     # Publish to Dev.to
+        # Generate slug from title
+    import re
+    slug = re.sub(r'[^a-z0-9]+', '-', blog_data["title"].lower()).strip('-')[:80]
+
+    # Save post to repo
+    save_post_to_repo(blog_data, image_data, slug)
+
+    # Also publish to Dev.to as backup/SEO (optional — can remove)
     success, post_url = publish_to_devto(blog_data, image_data)
 
-    if success:
+    if success or os.path.exists(f"posts/{slug}.json"):
         save_used_topic(topic)
 
-        blog_url = post_url if post_url else "https://dev.to"
+        blog_url = f"https://www.rentalops.ca/blog/{slug}"
 
         # LinkedIn
         linkedin_text = generate_linkedin_post(blog_data, blog_url)
         if linkedin_text:
-            image_url = image_data["url"] if image_data else None
-            post_to_linkedin(linkedin_text, image_url)
+            post_to_linkedin(linkedin_text)
 
         print("\n" + "=" * 60)
         print("✅ Blog post automation completed successfully!")
+        print(f"🔗 Live at: {blog_url}")
         print("=" * 60)
     else:
         print("\n" + "=" * 60)
         print("❌ Blog post automation failed.")
         print("=" * 60)
-
 
 if __name__ == "__main__":
     main()
