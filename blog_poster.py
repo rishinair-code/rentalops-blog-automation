@@ -392,66 +392,56 @@ def get_unsplash_image(query):
         print(f"⚠️  Error fetching image: {e}")
         return None
  
-# ── Hashnode ─────────────────────────────────────────────────────────────────
+# ── DEVTO ─────────────────────────────────────────────────────────────────
  
-def publish_to_hashnode(blog_data, image_data):
-    print("📤 Publishing to Hashnode...")
- 
-    # Photographer credit at bottom — image set via coverImageOptions, NOT embedded in markdown
+def publish_to_devto(blog_data, image_data):
+    """Publish blog post to Dev.to"""
+    print("📤 Publishing to Dev.to...")
+
     content = blog_data['content']
     if image_data:
         content = f"{content}\n\n---\n\n*{image_data['credit']}*"
- 
-    tags = []
-    for tag in blog_data.get('tags', [])[:5]:
-        tag_slug = tag.lower().replace(' ', '-').replace('_', '-')
-        tags.append({"slug": tag_slug, "name": tag})
- 
-    mutation = """
-    mutation PublishPost($input: PublishPostInput!) {
-        publishPost(input: $input) {
-            post { id title url slug }
+
+    article_payload = {
+        "article": {
+            "title": blog_data['title'],
+            "body_markdown": content,
+            "published": True,
+            "description": blog_data['metaDescription'],
+            "tags": [
+                tag.lower().replace(' ', '').replace('-', '')[:20]
+                for tag in blog_data.get('tags', [])[:4]
+            ],
+            "main_image": image_data['url'] if image_data else None
         }
     }
-    """
- 
-    post_input = {
-        "title": blog_data['title'],
-        "contentMarkdown": content,
-        "tags": tags,
-        "publicationId": HASHNODE_PUBLICATION_ID,
-        "metaTags": {"description": blog_data['metaDescription']}
-    }
- 
-    if image_data and image_data.get('url'):
-        post_input["coverImageOptions"] = {"coverImageURL": image_data['url']}
- 
+
     try:
         response = requests.post(
-            "https://gql.hashnode.com",
-            headers={"Authorization": HASHNODE_API_KEY, "Content-Type": "application/json"},
-            json={"query": mutation, "variables": {"input": post_input}}
+            "https://dev.to/api/articles",
+            headers={
+                "api-key": DEVTO_API_KEY,
+                "Content-Type": "application/json"
+            },
+            json=article_payload,
+            timeout=30
         )
- 
-        if response.status_code != 200:
-            print(f"❌ Hashnode returned status {response.status_code}")
-            print(f"❌ Hashnode response body: {response.text}")
- 
+
+        if response.status_code not in [200, 201]:
+            print(f"❌ Dev.to returned status {response.status_code}")
+            print(f"❌ Dev.to response: {response.text}")
+
         response.raise_for_status()
         result = response.json()
- 
-        if 'errors' in result:
-            print(f"❌ Hashnode GraphQL Error: {result['errors']}")
-            return False, None
- 
-        post = result['data']['publishPost']['post']
+
+        post_url = result.get('url', 'https://dev.to')
         print(f"✅ Post published successfully!")
-        print(f"📝 Title: {post['title']}")
-        print(f"🔗 URL: {post['url']}")
-        return True, post['url']
- 
+        print(f"📝 Title: {result['title']}")
+        print(f"🔗 URL: {post_url}")
+        return True, post_url
+
     except Exception as e:
-        print(f"❌ Error publishing to Hashnode: {e}")
+        print(f"❌ Error publishing to Dev.to: {e}")
         return False, None
  
 # ── LinkedIn ─────────────────────────────────────────────────────────────────
