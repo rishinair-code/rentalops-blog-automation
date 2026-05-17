@@ -3,6 +3,7 @@ import json
 import requests
 import random
 import re
+import time
 from datetime import datetime
 
 # API Keys from GitHub Secrets
@@ -167,7 +168,6 @@ def save_used_topic(topic):
 
 # ─────────────────────────────────────────────
 # SLUG GENERATION
-# Consistent, clean, no truncation issues
 # ─────────────────────────────────────────────
 def generate_slug(title: str) -> str:
     """
@@ -179,10 +179,9 @@ def generate_slug(title: str) -> str:
     """
     slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
     if len(slug) > 70:
-        # Cut at 70 chars then walk back to last hyphen so we don't cut mid-word
         slug = slug[:70]
         last_hyphen = slug.rfind('-')
-        if last_hyphen > 40:   # only trim if we still have a decent slug
+        if last_hyphen > 40:
             slug = slug[:last_hyphen]
     return slug
 
@@ -198,8 +197,6 @@ def get_current_persona():
 
 # ─────────────────────────────────────────────
 # INTERNAL LINKS BUILDER
-# Picks up to 3 relevant published posts to
-# reference inside the new article
 # ─────────────────────────────────────────────
 def get_internal_links(current_topic: str) -> str:
     """
@@ -208,10 +205,8 @@ def get_internal_links(current_topic: str) -> str:
     """
     BASE_URL = "https://www.rentalops.ca/blog"
 
-    # Filter out the current topic so we don't link to ourselves
     candidates = [p for p in PUBLISHED_POSTS if p["topic"] != current_topic]
 
-    # Prefer posts whose topic shares keywords with the current topic
     current_words = set(current_topic.lower().split())
     scored = []
     for post in candidates:
@@ -231,7 +226,7 @@ def get_internal_links(current_topic: str) -> str:
     )
     return f"""
 - Naturally include 2-3 internal links to related RentalOps blog posts within the article body.
-  Use the anchor text and URLs exactly as listed below. 
+  Use the anchor text and URLs exactly as listed below.
   Only link where it makes contextual sense — do NOT force links:
 {links_block}"""
 
@@ -326,7 +321,6 @@ def generate_blog_content():
 
     print(f"🤖 Generating content about: {topic}")
 
-    # Decide if this post should include an ROI/cost section
     include_roi = random.random() < 0.3
     roi_instruction = ""
     if include_roi:
@@ -336,7 +330,6 @@ def generate_blog_content():
 
     print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
 
-    # Build internal links block for this topic
     internal_links_instruction = get_internal_links(topic)
 
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -444,8 +437,10 @@ CRITICAL RULES:
 
 # ─────────────────────────────────────────────
 # PUBLISH TO DEV.TO
+# canonical_url tells Google that rentalops.ca
+# is the original source — not Dev.to
 # ─────────────────────────────────────────────
-def publish_to_devto(blog_data, image_data):
+def publish_to_devto(blog_data, image_data, slug):
     print("📤 Publishing to Dev.to...")
 
     content = blog_data["content"]
@@ -458,6 +453,9 @@ def publish_to_devto(blog_data, image_data):
 
     tags = [clean_tag(t) for t in blog_data.get("tags", [])[:4]]
 
+    # Canonical URL tells Google the original source is rentalops.ca
+    canonical_url = f"https://www.rentalops.ca/blog/{slug}"
+
     article_payload = {
         "article": {
             "title": blog_data["title"],
@@ -466,6 +464,7 @@ def publish_to_devto(blog_data, image_data):
             "description": blog_data["metaDescription"],
             "tags": tags,
             "main_image": image_data["url"] if image_data else None,
+            "canonical_url": canonical_url,  # ← THE KEY FIX
         }
     }
 
@@ -488,9 +487,10 @@ def publish_to_devto(blog_data, image_data):
         result = response.json()
 
         post_url = result.get("url", "https://dev.to")
-        print(f"✅ Post published successfully!")
+        print(f"✅ Dev.to post published!")
         print(f"📝 Title: {result['title']}")
-        print(f"🔗 URL: {post_url}")
+        print(f"🔗 Dev.to URL: {post_url}")
+        print(f"🏠 Canonical set to: {canonical_url}")
         return True, post_url
 
     except Exception as e:
@@ -590,12 +590,10 @@ def upload_image_to_linkedin(access_token, image_url, org_id):
         upload_url = register_data["value"]["uploadUrl"]
         image_urn = register_data["value"]["image"]
 
-        # Download image from Unsplash
         image_response = requests.get(image_url, timeout=15)
         image_response.raise_for_status()
         image_bytes = image_response.content
 
-        # Upload to LinkedIn
         upload_response = requests.put(
             upload_url,
             headers={
@@ -636,7 +634,6 @@ def post_to_linkedin(post_text, image_url=None):
         "LinkedIn-Version": "202501",
     }
 
-    # Get member ID (still needed for userinfo check)
     try:
         profile_response = requests.get(
             "https://api.linkedin.com/v2/userinfo",
@@ -654,12 +651,10 @@ def post_to_linkedin(post_text, image_url=None):
         print(f"❌ Failed to get LinkedIn profile: {e}")
         return False
 
-    # Upload image if available
     image_urn = None
     if image_url:
         image_urn = upload_image_to_linkedin(access_token, image_url, org_id)
 
-    # Build post payload
     author_urn = f"urn:li:organization:{org_id}"
 
     if image_urn:
@@ -743,64 +738,49 @@ def save_post_to_repo(blog_data, image_data, post_slug):
         print(f"⚠️  Could not save post to repo: {e}")
         return None
 
+
 # ─────────────────────────────────────────────
 # TRIGGER VERCEL REDEPLOY
-# Called after post is saved to GitHub so the
-# main site rebuilds and sitemap updates
 # ─────────────────────────────────────────────
 def trigger_vercel_redeploy():
     """
-    Hits the Vercel deploy hook to trigger a
-    production rebuild of rentalops.ca.
-    This causes generate-sitemap.mjs to re-run
-    and pick up the new blog post automatically.
+    Kept here as a utility function.
+    In practice this is now called by the
+    GitHub Actions workflow after git push,
+    not from within this script.
     """
     hook_url = os.environ.get("VERCEL_DEPLOY_HOOK_URL")
 
     if not hook_url:
         print("⚠️  VERCEL_DEPLOY_HOOK_URL not set — skipping redeploy trigger")
-        print("   Set this secret in GitHub to enable automatic sitemap updates")
         return False
 
     try:
         print("🚀 Triggering Vercel redeploy...")
-        response = requests.post(
-            hook_url,
-            timeout=15,
-        )
+        response = requests.post(hook_url, timeout=15)
 
         if response.status_code in [200, 201]:
             data = response.json()
             job_id = data.get("job", {}).get("id", "unknown")
-            print(f"✅ Vercel redeploy triggered successfully!")
-            print(f"   Job ID: {job_id}")
-            print(f"   rentalops.ca will rebuild in ~2-3 minutes")
-            print(f"   Sitemap will include new post after rebuild")
+            print(f"✅ Vercel redeploy triggered! Job ID: {job_id}")
             return True
         else:
             print(f"❌ Vercel deploy hook returned: {response.status_code}")
-            print(f"   Response: {response.text}")
             return False
 
     except Exception as e:
         print(f"❌ Failed to trigger Vercel redeploy: {e}")
         return False
 
+
 # ─────────────────────────────────────────────
-# UPDATE PUBLISHED POSTS INDEX
-# Appends the new post to used_topics + prints
-# a reminder to update PUBLISHED_POSTS manually
+# LOG NEW POST FOR INDEX
 # ─────────────────────────────────────────────
 def log_new_post_for_index(title: str, slug: str, topic: str):
     """
     Prints the PUBLISHED_POSTS entry for the new post so you can
     copy-paste it into the PUBLISHED_POSTS list above on next update.
     """
-    entry = {
-        "slug": slug,
-        "title": title,
-        "topic": topic,
-    }
     print("\n" + "─" * 60)
     print("📌 ADD THIS TO PUBLISHED_POSTS in blog_poster.py:")
     print("─" * 60)
@@ -840,10 +820,10 @@ def main():
     # Save post to repo
     saved_file = save_post_to_repo(blog_data, image_data, slug)
 
-    # Also publish to Dev.to as backup/SEO signal
-    success, post_url = publish_to_devto(blog_data, image_data)
+    # Publish to Dev.to with canonical URL pointing to rentalops.ca
+    # This ensures Google gives SEO credit to rentalops.ca not Dev.to
+    success, post_url = publish_to_devto(blog_data, image_data, slug)
 
-    
     if saved_file or success:
         save_used_topic(topic)
 
@@ -860,8 +840,9 @@ def main():
         print("\n" + "=" * 60)
         print("✅ Blog post automation completed successfully!")
         print(f"🔗 Will be live at: {blog_url}")
-        print(f"🗺️  Vercel redeploy will be triggered by GitHub Actions after commit")
-        print("=" * 60)        
+        print(f"🗺️  Vercel redeploy triggered by GitHub Actions after commit")
+        print("=" * 60)
+
     else:
         print("\n" + "=" * 60)
         print("❌ Blog post automation failed.")
