@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import random
+import re
 from datetime import datetime
 
 # API Keys from GitHub Secrets
@@ -88,6 +89,53 @@ PERSONAS = [
 ]
 
 # ─────────────────────────────────────────────
+# PUBLISHED POSTS INDEX
+# Used to generate internal links in new posts
+# ─────────────────────────────────────────────
+PUBLISHED_POSTS = [
+    {
+        "slug": "converting-rental-property-to-personal-use-in-canada-a-step-by-step-guide",
+        "title": "Converting Rental Property to Personal Use in Canada: A Step-by-Step Guide",
+        "topic": "converting rental property back to personal use Canada",
+    },
+    {
+        "slug": "failing-to-report-rental-income-to-cra-a-costly-mistake-for-canadian-landlords",
+        "title": "Failing to Report Rental Income to CRA: A Costly Mistake for Canadian Landlords",
+        "topic": "failing to report rental income CRA consequences",
+    },
+    {
+        "slug": "navigating-the-cra-principal-residence-exemption-a-guide-for-canadian-landlords",
+        "title": "Navigating the CRA Principal Residence Exemption: A Guide for Canadian Landlords",
+        "topic": "CRA principal residence exemption rental income Canada",
+    },
+    {
+        "slug": "reporting-rental-income-in-canada-a-guide-for-part-year-landlords",
+        "title": "Reporting Rental Income in Canada: A Guide for Part-Year Landlords",
+        "topic": "reporting rental income part year landlord Canada",
+    },
+    {
+        "slug": "setting-the-right-rent-price-for-your-canadian-rental-property",
+        "title": "Setting the Right Rent Price for Your Canadian Rental Property",
+        "topic": "how to set rent price Canadian rental property",
+    },
+    {
+        "slug": "simplifying-rental-property-accounting-software-vs-spreadsheets-for-canadian-landlords",
+        "title": "Simplifying Rental Property Accounting: Software vs Spreadsheets for Canadian Landlords",
+        "topic": "rental property accounting software vs spreadsheets Canada",
+    },
+    {
+        "slug": "tracking-rental-income-and-expenses-across-multiple-properties-a-canadian-landlord-guide",
+        "title": "Tracking Rental Income and Expenses Across Multiple Properties: A Canadian Landlord Guide",
+        "topic": "tracking rental income expenses multiple properties Canada",
+    },
+    {
+        "slug": "year-end-tax-checklist-for-canadian-landlords-a-comprehensive-guide",
+        "title": "Year-End Tax Checklist for Canadian Landlords: A Comprehensive Guide",
+        "topic": "year end tax checklist Canadian landlords multiple properties",
+    },
+]
+
+# ─────────────────────────────────────────────
 # USED TOPICS
 # ─────────────────────────────────────────────
 def get_used_topics():
@@ -118,12 +166,74 @@ def save_used_topic(topic):
 
 
 # ─────────────────────────────────────────────
+# SLUG GENERATION
+# Consistent, clean, no truncation issues
+# ─────────────────────────────────────────────
+def generate_slug(title: str) -> str:
+    """
+    Convert title to a clean URL slug.
+    - Lowercase
+    - Replace non-alphanumeric with hyphens
+    - Remove leading/trailing hyphens
+    - Hard cap at 70 chars, always breaking at a word boundary
+    """
+    slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    if len(slug) > 70:
+        # Cut at 70 chars then walk back to last hyphen so we don't cut mid-word
+        slug = slug[:70]
+        last_hyphen = slug.rfind('-')
+        if last_hyphen > 40:   # only trim if we still have a decent slug
+            slug = slug[:last_hyphen]
+    return slug
+
+
+# ─────────────────────────────────────────────
 # PERSONA SELECTION
 # ─────────────────────────────────────────────
 def get_current_persona():
     day_of_year = datetime.now().timetuple().tm_yday
     persona_index = day_of_year % len(PERSONAS)
     return PERSONAS[persona_index]
+
+
+# ─────────────────────────────────────────────
+# INTERNAL LINKS BUILDER
+# Picks up to 3 relevant published posts to
+# reference inside the new article
+# ─────────────────────────────────────────────
+def get_internal_links(current_topic: str) -> str:
+    """
+    Returns a formatted string of up to 3 relevant internal links
+    to pass into the AI prompt.
+    """
+    BASE_URL = "https://www.rentalops.ca/blog"
+
+    # Filter out the current topic so we don't link to ourselves
+    candidates = [p for p in PUBLISHED_POSTS if p["topic"] != current_topic]
+
+    # Prefer posts whose topic shares keywords with the current topic
+    current_words = set(current_topic.lower().split())
+    scored = []
+    for post in candidates:
+        post_words = set(post["topic"].lower().split())
+        score = len(current_words & post_words)
+        scored.append((score, post))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    selected = [p for _, p in scored[:3]]
+
+    if not selected:
+        return ""
+
+    links_block = "\n".join(
+        f'- [{p["title"]}]({BASE_URL}/{p["slug"]})'
+        for p in selected
+    )
+    return f"""
+- Naturally include 2-3 internal links to related RentalOps blog posts within the article body.
+  Use the anchor text and URLs exactly as listed below. 
+  Only link where it makes contextual sense — do NOT force links:
+{links_block}"""
 
 
 # ─────────────────────────────────────────────
@@ -226,6 +336,9 @@ def generate_blog_content():
 
     print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
 
+    # Build internal links block for this topic
+    internal_links_instruction = get_internal_links(topic)
+
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -249,25 +362,27 @@ You MUST respond with ONLY valid JSON. No markdown, no code blocks. Raw JSON onl
                 "content": f"""Write a complete blog post about: {topic}
 
 Requirements:
-- PRIMARY KEYWORD: "{topic}" — use this exact phrase 
-  or very close variant in the title, first paragraph, 
-  and at least 2 H2 headings
-- Title: Use the primary keyword naturally. 
+- PRIMARY KEYWORD: "{topic}" — use this exact phrase or a very close
+  variant in the title, first paragraph, and at least 2 H2 headings
+- Title: Use the primary keyword naturally.
   Format: "[Keyword]: [Benefit/Context] for Canadian Landlords"
-  or "[Year] Guide: [Keyword]". Keep under 60 characters if possible.
-- Meta description: 150-160 characters EXACTLY. 
-  Include the primary keyword. 
+  or "[Year] Guide: [Keyword]". Keep under 65 characters if possible.
+- Meta description: 150-160 characters EXACTLY.
+  Include the primary keyword.
   End with a benefit or call to action.
-- Content: 900-1200 words in markdown
-- Structure: Introduction (with keyword in first 100 words), 
-  3-5 H2 sections with keyword variants, Conclusion with CTA
-- Use H2 and H3 headers
-- Include practical, actionable Canadian-specific advice
+- Content: 1800-2500 words in markdown (longer = more authoritative)
+- Structure:
+    * Introduction (keyword in first 100 words, hook the reader)
+    * 4-6 H2 sections with keyword variants in headings
+    * Use H3 sub-headings inside sections where helpful
+    * "Key Takeaways" section near the end (bullet list)
+    * Conclusion with a strong CTA to try RentalOps free
+- Include practical, actionable Canadian-specific advice with
+  real numbers, dates, and CRA rule references
 - Reference CRA rules, T776, provincial regulations where applicable
-- Mention RentalOps naturally 2-3 times as a solution tool
-- End with a clear CTA to try RentalOps free
-- Include a "Key Takeaways" or summary section
-- Tags: 5 SEO-relevant tags (use actual search terms people use){roi_instruction}
+- Mention RentalOps naturally 2-3 times as a solution tool{roi_instruction}{internal_links_instruction}
+- Tags: 5 SEO-relevant tags (use actual search terms people use,
+  not generic words — e.g. "T776 form Canada" not just "taxes")
 
 Return ONLY this JSON structure:
 {{
@@ -278,17 +393,19 @@ Return ONLY this JSON structure:
   "persona": "{persona['name']}"
 }}
 
-IMPORTANT: The meta description must be 
-150-160 characters. Count carefully.""",
+CRITICAL RULES:
+- metaDescription must be 150-160 characters. Count carefully.
+- content must be 1800-2500 words. Do not cut it short.
+- Return raw JSON only — no markdown fences, no commentary.""",
             },
         ],
         "temperature": 0.7,
-        "max_tokens": 2000,
+        "max_tokens": 4000,
         "response_format": {"type": "json_object"},
     }
 
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        response = requests.post(url, headers=headers, json=payload, timeout=90)
         response.raise_for_status()
         result = response.json()
         ai_response = result["choices"][0]["message"]["content"]
@@ -305,9 +422,15 @@ IMPORTANT: The meta description must be
 
         print(f"✅ Content generated successfully")
         print(f"   Persona: {persona['name']}")
-        print(f"   Title: {blog_data['title'][:60]}...")
+        print(f"   Title: {blog_data['title'][:70]}")
+        print(f"   Meta ({len(blog_data['metaDescription'])} chars): {blog_data['metaDescription']}")
         print(f"   Tags: {', '.join(blog_data['tags'])}")
         print(f"   Content length: {len(blog_data['content'])} characters")
+        word_count = len(blog_data['content'].split())
+        print(f"   Word count: ~{word_count} words")
+
+        if word_count < 1200:
+            print(f"⚠️  WARNING: Content is only {word_count} words — below target of 1800")
 
         return blog_data, topic
 
@@ -588,6 +711,10 @@ def post_to_linkedin(post_text, image_url=None):
         print(f"❌ LinkedIn post failed: {e}")
         return False
 
+
+# ─────────────────────────────────────────────
+# SAVE POST TO REPO
+# ─────────────────────────────────────────────
 def save_post_to_repo(blog_data, image_data, post_slug):
     """Save the blog post as a JSON file in the posts/ directory"""
     try:
@@ -616,6 +743,33 @@ def save_post_to_repo(blog_data, image_data, post_slug):
         print(f"⚠️  Could not save post to repo: {e}")
         return None
 
+
+# ─────────────────────────────────────────────
+# UPDATE PUBLISHED POSTS INDEX
+# Appends the new post to used_topics + prints
+# a reminder to update PUBLISHED_POSTS manually
+# ─────────────────────────────────────────────
+def log_new_post_for_index(title: str, slug: str, topic: str):
+    """
+    Prints the PUBLISHED_POSTS entry for the new post so you can
+    copy-paste it into the PUBLISHED_POSTS list above on next update.
+    """
+    entry = {
+        "slug": slug,
+        "title": title,
+        "topic": topic,
+    }
+    print("\n" + "─" * 60)
+    print("📌 ADD THIS TO PUBLISHED_POSTS in blog_poster.py:")
+    print("─" * 60)
+    print(f"""    {{
+        "slug": "{slug}",
+        "title": "{title}",
+        "topic": "{topic}",
+    }},""")
+    print("─" * 60 + "\n")
+
+
 # ─────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────
@@ -633,39 +787,43 @@ def main():
         print("=" * 60)
         return
 
+    # Generate clean slug from title
+    slug = generate_slug(blog_data["title"])
+    print(f"🔗 Slug: {slug}")
+
     # Get cover image
     image_search_query = generate_image_query(blog_data["title"])
     image_data = get_unsplash_image(image_search_query)
 
-    # Publish to Dev.to
-        # Generate slug from title
-    import re
-    slug = re.sub(r'[^a-z0-9]+', '-', blog_data["title"].lower()).strip('-')[:80]
-
     # Save post to repo
-    save_post_to_repo(blog_data, image_data, slug)
+    saved_file = save_post_to_repo(blog_data, image_data, slug)
 
-    # Also publish to Dev.to as backup/SEO (optional — can remove)
+    # Also publish to Dev.to as backup/SEO signal
     success, post_url = publish_to_devto(blog_data, image_data)
 
-    if success or os.path.exists(f"posts/{slug}.json"):
+    if saved_file or success:
         save_used_topic(topic)
 
         blog_url = f"https://www.rentalops.ca/blog/{slug}"
 
+        # Log the new post entry for PUBLISHED_POSTS
+        log_new_post_for_index(blog_data["title"], slug, topic)
+
         # LinkedIn
         linkedin_text = generate_linkedin_post(blog_data, blog_url)
         if linkedin_text:
-            post_to_linkedin(linkedin_text)
+            post_to_linkedin(linkedin_text, image_data["url"] if image_data else None)
 
         print("\n" + "=" * 60)
         print("✅ Blog post automation completed successfully!")
-        print(f"🔗 Live at: {blog_url}")
+        print(f"🔗 Will be live at: {blog_url}")
+        print(f"⚠️  Remember: Redeploy rentalops.ca to update the sitemap!")
         print("=" * 60)
     else:
         print("\n" + "=" * 60)
         print("❌ Blog post automation failed.")
         print("=" * 60)
+
 
 if __name__ == "__main__":
     main()
