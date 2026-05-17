@@ -852,13 +852,6 @@ def main():
         # Log the new post entry for PUBLISHED_POSTS
         log_new_post_for_index(blog_data["title"], slug, topic)
 
-        # Trigger Vercel redeploy so sitemap updates automatically
-        # Small delay to ensure GitHub has committed the file first
-        import time
-        print("⏳ Waiting 30 seconds for GitHub to commit post file...")
-        time.sleep(30)
-        redeploy_triggered = trigger_vercel_redeploy()
-
         # LinkedIn
         linkedin_text = generate_linkedin_post(blog_data, blog_url)
         if linkedin_text:
@@ -867,12 +860,8 @@ def main():
         print("\n" + "=" * 60)
         print("✅ Blog post automation completed successfully!")
         print(f"🔗 Will be live at: {blog_url}")
-        if redeploy_triggered:
-            print(f"🗺️  Sitemap updating automatically — live in ~3 minutes")
-        else:
-            print(f"⚠️  Sitemap NOT updated — check VERCEL_DEPLOY_HOOK_URL secret")
-        print("=" * 60)
-        
+        print(f"🗺️  Vercel redeploy will be triggered by GitHub Actions after commit")
+        print("=" * 60)        
     else:
         print("\n" + "=" * 60)
         print("❌ Blog post automation failed.")
