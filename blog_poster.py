@@ -743,6 +743,48 @@ def save_post_to_repo(blog_data, image_data, post_slug):
         print(f"⚠️  Could not save post to repo: {e}")
         return None
 
+# ─────────────────────────────────────────────
+# TRIGGER VERCEL REDEPLOY
+# Called after post is saved to GitHub so the
+# main site rebuilds and sitemap updates
+# ─────────────────────────────────────────────
+def trigger_vercel_redeploy():
+    """
+    Hits the Vercel deploy hook to trigger a
+    production rebuild of rentalops.ca.
+    This causes generate-sitemap.mjs to re-run
+    and pick up the new blog post automatically.
+    """
+    hook_url = os.environ.get("VERCEL_DEPLOY_HOOK_URL")
+
+    if not hook_url:
+        print("⚠️  VERCEL_DEPLOY_HOOK_URL not set — skipping redeploy trigger")
+        print("   Set this secret in GitHub to enable automatic sitemap updates")
+        return False
+
+    try:
+        print("🚀 Triggering Vercel redeploy...")
+        response = requests.post(
+            hook_url,
+            timeout=15,
+        )
+
+        if response.status_code in [200, 201]:
+            data = response.json()
+            job_id = data.get("job", {}).get("id", "unknown")
+            print(f"✅ Vercel redeploy triggered successfully!")
+            print(f"   Job ID: {job_id}")
+            print(f"   rentalops.ca will rebuild in ~2-3 minutes")
+            print(f"   Sitemap will include new post after rebuild")
+            return True
+        else:
+            print(f"❌ Vercel deploy hook returned: {response.status_code}")
+            print(f"   Response: {response.text}")
+            return False
+
+    except Exception as e:
+        print(f"❌ Failed to trigger Vercel redeploy: {e}")
+        return False
 
 # ─────────────────────────────────────────────
 # UPDATE PUBLISHED POSTS INDEX
