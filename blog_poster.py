@@ -17,64 +17,72 @@ PERSONAS = [
         "name": "First-Time Landlord",
         "description": "Someone who recently became a landlord and is overwhelmed by taxes, compliance, and paperwork.",
         "topics": [
-            "what expenses can Canadian landlords deduct on their taxes",
-            "how to fill out the T776 rental income form in Canada",
-            "Ontario landlord obligations under the Residential Tenancies Act",
-            "how to screen tenants legally in Canada",
-            "security deposits rules for Ontario landlords",
-            "first-year mistakes new Canadian landlords make",
-            "how to set rent price for your first rental property in Canada",
-            "what is the landlord and tenant board and how does it work",
-            "how to write a lease agreement in Ontario",
-            "CRA audit risk for rental income — what triggers it",
+            "rental property tax deductions Canada 2026",
+            "how to fill out T776 form Canada step by step",
+            "Ontario landlord tenant board rules 2026",
+            "how to screen tenants legally Canada",
+            "security deposit rules Ontario landlords",
+            "first time landlord mistakes Canada",
+            "how to set rent price Canadian rental property",
+            "landlord tenant board Ontario how it works",
+            "how to write lease agreement Ontario",
+            "CRA audit rental income what triggers it Canada",
+            "is rental income taxable in Canada",
+            "landlord tax deductions Canada complete guide",
         ],
     },
     {
         "name": "Portfolio Builder",
         "description": "A landlord with 2–10 properties looking to scale efficiently and minimize tax burden.",
         "topics": [
-            "how to track rental income and expenses across multiple properties",
-            "capital cost allowance for Canadian rental properties explained",
-            "GST HST implications for Canadian landlords — what you need to know",
-            "how to incorporate your rental properties in Canada",
-            "automating rent collection across multiple Canadian properties",
-            "refinancing rental properties in Canada — tax implications",
-            "how to use a holding company for rental properties in Canada",
-            "inter-provincial landlord rules if you own properties in multiple provinces",
-            "hiring a property manager vs self-managing — tax and cost comparison",
-            "year-end tax checklist for Canadian landlords with multiple properties",
+            "tracking rental income expenses multiple properties Canada",
+            "capital cost allowance rental property Canada explained",
+            "GST HST Canadian landlords what you need to know",
+            "how to incorporate rental properties Canada",
+            "automating rent collection multiple properties Canada",
+            "refinancing rental properties Canada tax implications",
+            "holding company rental properties Canada benefits",
+            "landlord multiple provinces Canada rules",
+            "property manager vs self managing Canada tax comparison",
+            "year end tax checklist Canadian landlords multiple properties",
+            "rental property depreciation Canada CCA guide",
+            "capital gains rental property Canada landlord guide",
         ],
     },
     {
         "name": "Accidental Landlord",
         "description": "Someone renting out a property by necessity — inherited home, relocated for work, couldn't sell.",
         "topics": [
-            "tax rules for renting out your principal residence in Canada",
-            "how to report rental income if you only rented part of the year",
-            "renting out your basement suite in Canada — what you need to know",
-            "capital gains implications when you sell a property you rented out",
-            "what happens if you don't report rental income to CRA",
-            "short-term vs long-term rental tax rules in Canada",
-            "Airbnb tax rules for Canadian landlords",
-            "how to convert rental property back to personal use in Canada",
-            "insurance requirements when renting your home in Canada",
-            "CRA principal residence exemption — how it interacts with rental income",
+            "tax rules renting out principal residence Canada",
+            "reporting rental income part year landlord Canada",
+            "renting out basement suite Canada rules",
+            "capital gains selling rental property Canada",
+            "failing to report rental income CRA consequences",
+            "short term vs long term rental tax rules Canada",
+            "Airbnb tax rules Canadian landlords 2026",
+            "converting rental property back to personal use Canada",
+            "insurance requirements renting home Canada",
+            "CRA principal residence exemption rental income Canada",
+            "what happens CRA audit rental property Canada",
+            "rental income affect tax bracket Canada",
         ],
     },
     {
         "name": "Part-Time Property Manager",
         "description": "Someone managing properties for family or as a side income alongside a full-time job.",
         "topics": [
-            "how rental income affects your tax bracket in Canada",
-            "deducting home office expenses as a landlord in Canada",
-            "record keeping requirements for Canadian landlords",
-            "how to split rental income with a spouse in Canada",
-            "mileage and travel deductions for Canadian landlords",
-            "using software vs spreadsheets for rental property accounting",
-            "why US property management software fails Canadian landlords",
-            "how to prepare for tax season as a part-time landlord",
-            "deducting professional fees legal and accounting for landlords",
-            "passive income rules and rental income — what CRA says",
+            "rental income tax bracket Canada 2026",
+            "home office deduction landlord Canada",
+            "record keeping requirements Canadian landlords CRA",
+            "splitting rental income spouse Canada tax",
+            "mileage travel deductions landlord Canada",
+            "rental property accounting software vs spreadsheets Canada",
+            "property management software Canada landlords",
+            "tax season preparation part time landlord Canada",
+            "professional fees deduction landlord Canada legal accounting",
+            "passive income rental income CRA rules Canada",
+            "landlord accounting software Canada review",
+            "best rental income tracker Canada",
         ],
     },
 ]
@@ -241,15 +249,25 @@ You MUST respond with ONLY valid JSON. No markdown, no code blocks. Raw JSON onl
                 "content": f"""Write a complete blog post about: {topic}
 
 Requirements:
-- Title: compelling, SEO-friendly, Canadian context
-- Meta description: 150-160 characters
-- Content: 800-1200 words in markdown format
+- PRIMARY KEYWORD: "{topic}" — use this exact phrase 
+  or very close variant in the title, first paragraph, 
+  and at least 2 H2 headings
+- Title: Use the primary keyword naturally. 
+  Format: "[Keyword]: [Benefit/Context] for Canadian Landlords"
+  or "[Year] Guide: [Keyword]". Keep under 60 characters if possible.
+- Meta description: 150-160 characters EXACTLY. 
+  Include the primary keyword. 
+  End with a benefit or call to action.
+- Content: 900-1200 words in markdown
+- Structure: Introduction (with keyword in first 100 words), 
+  3-5 H2 sections with keyword variants, Conclusion with CTA
 - Use H2 and H3 headers
-- Include practical, actionable advice
-- Reference CRA rules, provincial regulations where applicable
-- Mention RentalOps naturally 2-3 times as a solution tool (not spammy)
-- End with a clear call to action to try RentalOps{roi_instruction}
-- Tags: 5 relevant tags for Canadian landlord/real estate content
+- Include practical, actionable Canadian-specific advice
+- Reference CRA rules, T776, provincial regulations where applicable
+- Mention RentalOps naturally 2-3 times as a solution tool
+- End with a clear CTA to try RentalOps free
+- Include a "Key Takeaways" or summary section
+- Tags: 5 SEO-relevant tags (use actual search terms people use){roi_instruction}
 
 Return ONLY this JSON structure:
 {{
@@ -258,7 +276,10 @@ Return ONLY this JSON structure:
   "content": "... full markdown content ...",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "persona": "{persona['name']}"
-}}""",
+}}
+
+IMPORTANT: The meta description must be 
+150-160 characters. Count carefully.""",
             },
         ],
         "temperature": 0.7,
