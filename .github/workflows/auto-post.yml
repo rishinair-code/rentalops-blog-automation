@@ -41,7 +41,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add used_topics.json posts/ published_pillars.json
+          git add used_topics.json posts/
+          git add published_pillars.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "Add new blog post and update topics log"
           git push
 
