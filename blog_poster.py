@@ -91,9 +91,8 @@ PERSONAS = [
 
 # ─────────────────────────────────────────────
 # PILLAR POSTS
-# These are comprehensive 3000+ word guides
-# that anchor each topic cluster.
-# Written less frequently — once per cluster.
+# Comprehensive 3000+ word guides that anchor
+# each topic cluster. Written once per cluster.
 # ─────────────────────────────────────────────
 PILLAR_POSTS = [
     {
@@ -162,9 +161,8 @@ PILLAR_POSTS = [
 
 # ─────────────────────────────────────────────
 # PUBLISHED POSTS INDEX
-# Used to generate internal links in new posts
-# Add new entries here after each post publishes
-# (the log at the end of each run tells you what to add)
+# Add new entries after each post publishes
+# (the log at end of each run tells you what to add)
 # ─────────────────────────────────────────────
 PUBLISHED_POSTS = [
     {
@@ -215,12 +213,16 @@ PUBLISHED_POSTS = [
         "topic": "year end tax checklist Canadian landlords multiple properties",
         "cluster": "CRA Tax & Reporting",
     },
+    {
+        "slug": "airbnb-tax-rules-canadian-landlords-2026",
+        "title": "Airbnb Tax Rules: Canadian Landlords 2026",
+        "topic": "Airbnb tax rules Canadian landlords 2026",
+        "cluster": "CRA Tax & Reporting",
+    },
 ]
 
 # ─────────────────────────────────────────────
 # PILLAR POST TRACKING
-# Tracks which pillar posts have been written
-# so we don't write them twice
 # ─────────────────────────────────────────────
 PILLAR_POSTS_FILE = "published_pillars.json"
 
@@ -244,6 +246,7 @@ def save_published_pillar(pillar_id):
         print(f"✅ Pillar saved: {pillar_id}")
     except Exception as e:
         print(f"⚠️  Could not save pillar: {e}")
+
 
 # ─────────────────────────────────────────────
 # USED TOPICS
@@ -299,7 +302,6 @@ def get_current_persona():
 
 # ─────────────────────────────────────────────
 # INTERNAL LINKS BUILDER
-# Picks up to 3 relevant published posts
 # Prioritises same-cluster posts
 # ─────────────────────────────────────────────
 def get_internal_links(current_topic: str, current_cluster: str = None) -> str:
@@ -312,8 +314,9 @@ def get_internal_links(current_topic: str, current_cluster: str = None) -> str:
     for post in candidates:
         post_words = set(post["topic"].lower().split())
         keyword_score = len(current_words & post_words)
-        # Boost same-cluster posts so cluster links are stronger
-        cluster_bonus = 2 if (current_cluster and post.get("cluster") == current_cluster) else 0
+        cluster_bonus = 2 if (
+            current_cluster and post.get("cluster") == current_cluster
+        ) else 0
         scored.append((keyword_score + cluster_bonus, post))
 
     scored.sort(key=lambda x: x[0], reverse=True)
@@ -335,8 +338,6 @@ def get_internal_links(current_topic: str, current_cluster: str = None) -> str:
 
 # ─────────────────────────────────────────────
 # PILLAR POST INTERNAL LINKS
-# Returns formatted links to all cluster posts
-# for use inside pillar post prompt
 # ─────────────────────────────────────────────
 def get_pillar_internal_links(pillar: dict) -> str:
     BASE_URL = "https://www.rentalops.ca/blog"
@@ -350,20 +351,18 @@ def get_pillar_internal_links(pillar: dict) -> str:
     return f"""
 - This is a PILLAR post. Link to these related cluster posts naturally within the content:
 {links_block}
-- Also mention that readers can explore the full RentalOps blog for more detailed guides on each topic."""
+- Also mention that readers can explore the full RentalOps blog for more detailed guides on each sub-topic."""
 
 
 # ─────────────────────────────────────────────
-# CHECK IF PILLAR POST SHOULD RUN TODAY
-# Pillars run on days 1 and 15 of each month
-# (roughly twice a month between regular posts)
-# Only runs if that pillar hasn't been written yet
+# CHECK IF PILLAR POST IS DUE TODAY
+# Runs on day 1 and day 15 of each month
+# Only if that pillar hasn't been written yet
 # ─────────────────────────────────────────────
 def get_pending_pillar() -> dict | None:
     today = datetime.now().day
     published_pillars = get_published_pillars()
 
-    # Only attempt pillar posts on day 1 or day 15 of month
     if today not in [1, 15]:
         return None
 
@@ -432,7 +431,11 @@ def get_unsplash_image(query):
     try:
         response = requests.get(
             "https://api.unsplash.com/photos/random",
-            params={"query": query, "orientation": "landscape", "content_filter": "high"},
+            params={
+                "query": query,
+                "orientation": "landscape",
+                "content_filter": "high",
+            },
             headers={"Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}"},
             timeout=15,
         )
@@ -440,7 +443,11 @@ def get_unsplash_image(query):
         data = response.json()
         image_url = data["urls"]["regular"]
         photographer = data["user"]["name"]
-        credit = f"Photo by [{photographer}](https://unsplash.com/@{data['user']['username']}) on [Unsplash](https://unsplash.com)"
+        credit = (
+            f"Photo by [{photographer}]"
+            f"(https://unsplash.com/@{data['user']['username']}) "
+            f"on [Unsplash](https://unsplash.com)"
+        )
         print(f"✅ Image found by {photographer}")
         return {"url": image_url, "credit": credit}
     except Exception as e:
@@ -449,9 +456,15 @@ def get_unsplash_image(query):
 
 
 # ─────────────────────────────────────────────
-# GROQ API CALL — shared helper
+# GROQ API — shared helper
+# max_tokens set to 6000 to allow 1800-2500
+# word posts without truncation
 # ─────────────────────────────────────────────
-def call_groq(messages: list, max_tokens: int = 4000, temperature: float = 0.7) -> str | None:
+def call_groq(
+    messages: list,
+    max_tokens: int = 6000,
+    temperature: float = 0.7
+) -> str | None:
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -465,7 +478,9 @@ def call_groq(messages: list, max_tokens: int = 4000, temperature: float = 0.7) 
         "response_format": {"type": "json_object"},
     }
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=120)
+        response = requests.post(
+            url, headers=headers, json=payload, timeout=120
+        )
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
@@ -476,14 +491,15 @@ def call_groq(messages: list, max_tokens: int = 4000, temperature: float = 0.7) 
 # ─────────────────────────────────────────────
 # PILLAR POST GENERATION
 # 3000-3500 words, comprehensive guide format
-# anchors the topic cluster
 # ─────────────────────────────────────────────
 def generate_pillar_content(pillar: dict):
-    print(f"📌 Generating PILLAR post for cluster: {pillar['cluster']}")
+    print(f"📌 Generating PILLAR post: {pillar['cluster']}")
     print(f"   Topic: {pillar['topic']}")
 
     internal_links_instruction = get_pillar_internal_links(pillar)
-    cluster_posts_list = "\n".join(f"  - {t}" for t in pillar["cluster_posts"])
+    cluster_posts_list = "\n".join(
+        f"  - {t}" for t in pillar["cluster_posts"]
+    )
 
     messages = [
         {
@@ -513,31 +529,30 @@ Suggested title: {pillar['title_hint']}
 Core topic: {pillar['topic']}
 Post description: {pillar['description']}
 
-This pillar post must cover these sub-topics (each will have its own dedicated blog post 
-that links back to this pillar):
+This pillar post must cover these sub-topics (each will have its own dedicated 
+blog post that links back to this pillar):
 {cluster_posts_list}
 
 Requirements:
 - PRIMARY KEYWORD: "{pillar['topic']}" — use in title, first paragraph, and 2+ H2 headings
-- Title: Use the suggested title above or a very close variant. Keep under 70 characters.
+- Title: Use the suggested title above or very close variant. Keep under 70 characters.
 - Meta description: 150-160 characters EXACTLY. Include primary keyword. End with a benefit.
 - Content: 3000-3500 words minimum. This is a comprehensive reference guide.
 - Tone: Plain English. Reassuring not scary. Written for a non-accountant landlord.
-  Avoid jargon. When you must use tax terms, explain them immediately.
+  Avoid jargon. When you must use tax terms explain them immediately.
 - Structure:
     * Introduction — Why this matters for small landlords specifically (1-5 properties)
       Hook with a relatable scenario (e.g. "You just got your first rent cheque...")
       Use primary keyword in first 100 words
     * 5-7 H2 sections covering the sub-topics listed above
-      Each H2 section should be 300-500 words with H3 sub-sections
+      Each H2 section 300-500 words with H3 sub-sections
     * "Quick Reference" section — bullet list of the most important rules/numbers
-    * "Common Mistakes Small Landlords Make" section — specific, actionable
+    * "Common Mistakes Small Landlords Make" section — specific and actionable
     * "Key Takeaways" section — 5-7 bullet points summarising everything
     * Conclusion with strong CTA to try RentalOps free
 - Include real Canadian numbers: CRA deadlines, T776 line numbers, CAD amounts,
   provincial rule references, penalty amounts where relevant
-- Mention RentalOps 3-4 times naturally as the tool that makes this manageable
-- Each mention of RentalOps should be tied to a specific pain point just discussed{internal_links_instruction}
+- Mention RentalOps 3-4 times naturally — each tied to a specific pain point{internal_links_instruction}
 - Tags: 5 highly specific SEO tags (real search terms, not generic words)
 
 Return ONLY this JSON:
@@ -552,13 +567,13 @@ Return ONLY this JSON:
 }}
 
 CRITICAL:
-- metaDescription must be 150-160 characters exactly
-- content must be 3000-3500 words — do not cut short
-- Raw JSON only — no markdown fences""",
+- metaDescription must be 150-160 characters exactly. Count carefully.
+- content must be 3000-3500 words. Do not cut short under any circumstances.
+- Raw JSON only — no markdown fences, no commentary outside the JSON.""",
         },
     ]
 
-    raw = call_groq(messages, max_tokens=6000, temperature=0.65)
+    raw = call_groq(messages, max_tokens=8000, temperature=0.65)
     if not raw:
         return None, None
 
@@ -590,6 +605,8 @@ CRITICAL:
 # ─────────────────────────────────────────────
 # REGULAR BLOG POST GENERATION
 # 1800-2500 words, cluster-aware
+# Returns None, None if word count too low
+# so main() can retry
 # ─────────────────────────────────────────────
 def generate_blog_content():
     persona = get_current_persona()
@@ -608,7 +625,7 @@ def generate_blog_content():
 
     print(f"🤖 Generating content about: {topic}")
 
-    # Determine which cluster this topic belongs to
+    # Determine cluster for this topic
     current_cluster = None
     for pillar in PILLAR_POSTS:
         if topic in pillar["cluster_posts"]:
@@ -616,13 +633,14 @@ def generate_blog_content():
             break
     print(f"🗂️  Cluster: {current_cluster or 'General'}")
 
-    # Find the pillar post for this cluster if it exists
+    # Link back to pillar if it has been published
     pillar_link_instruction = ""
     published_pillars = get_published_pillars()
     for pillar in PILLAR_POSTS:
-        if (pillar["cluster"] == current_cluster
-                and pillar["id"] in published_pillars):
-            # We know the slug from the title hint
+        if (
+            pillar["cluster"] == current_cluster
+            and pillar["id"] in published_pillars
+        ):
             pillar_slug = generate_slug(pillar["title_hint"])
             pillar_link_instruction = f"""
 - This post is part of the "{pillar['cluster']}" cluster.
@@ -638,7 +656,7 @@ def generate_blog_content():
 - Include a section: "What This Costs You Without the Right Tools"
   Compare doing this manually (time + risk of errors) vs using RentalOps.
   Be specific: e.g. "2-3 hours per month tracking receipts manually 
-  vs RentalOps doing it automatically for $6.99/month"
+  vs RentalOps doing it automatically for $6.99/month".
   Include RentalOps pricing starting at $6.99/month."""
 
     print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
@@ -652,15 +670,15 @@ def generate_blog_content():
 tracking and tax preparation tool designed for small landlords with 1-5 properties.
 
 Your audience: Regular Canadians who own 1-5 rental properties. They are NOT 
-accountants. They're confused about CRA rules, worried about audits, and just want 
-to do things right without hiring expensive help for every question.
+accountants. They are confused about CRA rules, worried about audits, and just 
+want to do things right without hiring expensive help for every question.
 
 Your tone: Plain English. Reassuring and practical. Like a knowledgeable friend 
 explaining things — not a textbook or a lawyer. Use real numbers, real examples, 
 real Canadian context (CRA, T776, LTB, CAD amounts, provincial rules).
 
-RentalOps helps landlords track income/expenses, prepare for tax season, file T776 
-accurately, and stay CRA-compliant — without the guesswork.
+RentalOps helps landlords track income/expenses, prepare for tax season, file 
+T776 accurately, and stay CRA-compliant — without the guesswork.
 
 Target persona: {persona['name']} — {persona['description']}
 You MUST respond with ONLY valid JSON. No markdown fences. Raw JSON only.""",
@@ -676,36 +694,38 @@ their perspective — acknowledge the confusion, then educate clearly.
 Requirements:
 - PRIMARY KEYWORD: "{topic}" — use this exact phrase or very close variant
   in the title, first paragraph, and at least 2 H2 headings
-- Title: Natural, keyword-first format. Under 65 characters if possible.
+- Title: Natural, keyword-first. Under 65 characters if possible.
   Format options:
     "[Keyword]: What Canadian Landlords Need to Know"
     "[Year] Guide: [Keyword] for Small Landlords"
     "The Small Landlord's Guide to [Keyword]"
 - Meta description: 150-160 characters EXACTLY.
   Include primary keyword. End with a clear benefit or action.
-- Content: 1800-2500 words in markdown
+- Content: 1800-2500 words in markdown.
+  YOU MUST WRITE AT LEAST 1800 WORDS. This is a firm requirement.
+  Do not stop early. If you are approaching the end of a section,
+  add more detail, examples, or sub-sections before moving on.
 - Tone: Plain English. Conversational. Reassuring not scary.
   Explain every tax term the first time you use it.
 - Structure:
-    * Introduction — relatable hook (scenario or question the reader is facing)
+    * Introduction — relatable hook (scenario or question the reader faces)
       Primary keyword in first 100 words
-    * 4-6 H2 sections — use keyword variants in headings
+    * 4-6 H2 sections — keyword variants in headings
       Each section with H3 sub-headings where it helps clarity
-    * Real Canadian numbers: CRA deadlines, T776 line numbers, 
+      Each H2 section must be at least 250 words
+    * Real Canadian numbers: CRA deadlines, T776 line numbers,
       penalty amounts, CAD dollar examples
     * "Common Mistakes" section — at least 3 specific mistakes small landlords make
     * "Key Takeaways" — 5 bullet points max, plain English
     * Conclusion — strong CTA to try RentalOps free{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
-- Mention RentalOps 2-3 times naturally — each mention tied to a specific 
-  pain point just discussed, not generic promotion
-- Tags: 5 SEO-relevant tags — real search terms, specific to Canada
-  (e.g. "T776 form Canada" not just "taxes")
+- Mention RentalOps 2-3 times naturally — each tied to a specific pain point
+- Tags: 5 SEO tags — real search terms, specific to Canada
 
 Return ONLY this JSON:
 {{
   "title": "...",
   "metaDescription": "...",
-  "content": "... full markdown 1800-2500 words ...",
+  "content": "... full markdown minimum 1800 words ...",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
   "persona": "{persona['name']}",
   "postType": "cluster",
@@ -714,12 +734,12 @@ Return ONLY this JSON:
 
 CRITICAL:
 - metaDescription must be 150-160 characters. Count carefully.
-- content must be 1800-2500 words. Do not cut it short.
+- content must be minimum 1800 words. Count carefully. Do not stop early.
 - Raw JSON only — no markdown fences, no commentary.""",
         },
     ]
 
-    raw = call_groq(messages, max_tokens=4000, temperature=0.7)
+    raw = call_groq(messages, max_tokens=6000, temperature=0.7)
     if not raw:
         return None, None
 
@@ -736,17 +756,27 @@ CRITICAL:
         print(f"   Persona: {persona['name']}")
         print(f"   Cluster: {blog_data.get('cluster', 'General')}")
         print(f"   Title: {blog_data['title'][:70]}")
-        print(f"   Meta ({len(blog_data['metaDescription'])} chars): {blog_data['metaDescription']}")
+        print(
+            f"   Meta ({len(blog_data['metaDescription'])} chars): "
+            f"{blog_data['metaDescription']}"
+        )
         print(f"   Tags: {', '.join(blog_data['tags'])}")
         print(f"   Word count: ~{word_count} words")
 
         if word_count < 1200:
-            print(f"⚠️  WARNING: Only {word_count} words — target is 1800-2500")
+            print(
+                f"⚠️  Word count too low ({word_count} words) — "
+                f"returning None to trigger retry"
+            )
+            return None, None
 
         return blog_data, topic
 
     except json.JSONDecodeError as e:
         print(f"❌ JSON parsing error: {e}")
+        return None, None
+    except Exception as e:
+        print(f"❌ Content generation failed: {e}")
         return None, None
 
 
@@ -817,17 +847,20 @@ def generate_linkedin_post(blog_data, blog_url):
     post_type = blog_data.get("postType", "cluster")
     cluster = blog_data.get("cluster", "")
 
-    type_instruction = ""
     if post_type == "pillar":
-        type_instruction = """This is a COMPREHENSIVE GUIDE (pillar post) — the hook should 
-reflect that this is the definitive resource on this topic. 
-e.g. "I just published the most complete guide to [topic] for Canadian landlords..."
-Emphasise the depth and completeness."""
+        type_instruction = (
+            "This is a COMPREHENSIVE GUIDE (pillar post). "
+            "The hook should reflect that this is the definitive resource. "
+            'e.g. "I just published the most complete guide to [topic] '
+            'for Canadian landlords..." Emphasise depth and completeness.'
+        )
     else:
-        type_instruction = """This is a focused practical guide on one specific topic.
-The hook should speak directly to the pain point.
-e.g. "Did you know most Canadian landlords miss this deduction every year?"
-Be specific and relatable."""
+        type_instruction = (
+            "This is a focused practical guide on one specific topic. "
+            "The hook should speak directly to the pain point. "
+            'e.g. "Did you know most Canadian landlords miss this deduction?" '
+            "Be specific and relatable."
+        )
 
     messages = [
         {
@@ -853,7 +886,7 @@ Post type guidance: {type_instruction}
 Rules:
 - 150-200 words maximum
 - First line is the hook — make it impossible to scroll past
-- Write as if you're a landlord sharing something useful, not a marketer
+- Write as if you are a landlord sharing something useful, not a marketer
 - Reference specific Canadian context (CRA, T776, Ontario LTB, etc.)
 - One clear call to action at the end linking to the article
 - 4-5 relevant hashtags on the last line
@@ -881,48 +914,70 @@ Return ONLY this JSON:
 
 def upload_image_to_linkedin(access_token, image_url, org_id):
     print("🖼️  Uploading image to LinkedIn...")
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-        "LinkedIn-Version": "202501",
-    }
-    register_payload = {
-        "initializeUploadRequest": {"owner": f"urn:li:organization:{org_id}"}
-    }
+
     try:
+        # Download image first
+        image_response = requests.get(image_url, timeout=15)
+        image_response.raise_for_status()
+        image_bytes = image_response.content
+
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+            "X-Restli-Protocol-Version": "2.0.0",
+        }
+
+        # Register upload using the stable assets API
+        register_payload = {
+            "registerUploadRequest": {
+                "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
+                "owner": f"urn:li:organization:{org_id}",
+                "serviceRelationships": [
+                    {
+                        "relationshipType": "OWNER",
+                        "identifier": "urn:li:userGeneratedContent",
+                    }
+                ],
+            }
+        }
+
         register_response = requests.post(
-            "https://api.linkedin.com/rest/images?action=initializeUpload",
+            "https://api.linkedin.com/v2/assets?action=registerUpload",
             headers=headers,
             json=register_payload,
             timeout=15,
         )
         register_response.raise_for_status()
         register_data = register_response.json()
-        upload_url = register_data["value"]["uploadUrl"]
-        image_urn = register_data["value"]["image"]
 
-        image_response = requests.get(image_url, timeout=15)
-        image_response.raise_for_status()
+        upload_url = register_data["value"]["uploadMechanism"][
+            "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
+        ]["uploadUrl"]
+        asset_urn = register_data["value"]["asset"]
 
+        # Upload image bytes
         upload_response = requests.put(
             upload_url,
             headers={
                 "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/octet-stream",
             },
-            data=image_response.content,
+            data=image_bytes,
             timeout=30,
         )
         upload_response.raise_for_status()
-        print("✅ Image uploaded to LinkedIn")
-        return image_urn
+
+        print(f"✅ Image uploaded to LinkedIn — asset: {asset_urn}")
+        return asset_urn
+
     except Exception as e:
-        print(f"⚠️  Image upload failed: {e}")
+        print(f"⚠️  Image upload failed — posting without image: {e}")
         return None
 
 
 def post_to_linkedin(post_text, image_url=None):
     print("📤 Posting to LinkedIn...")
+
     access_token = os.environ.get("LINKEDIN_ACCESS_TOKEN")
     org_id = os.environ.get("LINKEDIN_ORGANIZATION_ID")
 
@@ -943,7 +998,8 @@ def post_to_linkedin(post_text, image_url=None):
     try:
         profile_response = requests.get(
             "https://api.linkedin.com/v2/userinfo",
-            headers=headers, timeout=10
+            headers=headers,
+            timeout=10,
         )
         profile_response.raise_for_status()
         member_id = profile_response.json().get("sub")
@@ -969,10 +1025,18 @@ def post_to_linkedin(post_text, image_url=None):
                 "com.linkedin.ugc.ShareContent": {
                     "shareCommentary": {"text": post_text},
                     "shareMediaCategory": "IMAGE",
-                    "media": [{"status": "READY", "media": image_urn}],
+                    "media": [
+                        {
+                            "status": "READY",
+                            "media": image_urn,
+                            "mediaType": "urn:li:digitalmediaMediaType:image",
+                        }
+                    ],
                 }
             },
-            "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
+            "visibility": {
+                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+            },
         }
     else:
         post_payload = {
@@ -984,13 +1048,17 @@ def post_to_linkedin(post_text, image_url=None):
                     "shareMediaCategory": "NONE",
                 }
             },
-            "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"},
+            "visibility": {
+                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+            },
         }
 
     try:
         post_response = requests.post(
             "https://api.linkedin.com/v2/ugcPosts",
-            headers=headers, json=post_payload, timeout=15
+            headers=headers,
+            json=post_payload,
+            timeout=15,
         )
         if post_response.status_code not in [200, 201]:
             print(f"❌ LinkedIn post failed: {post_response.status_code}")
@@ -1034,6 +1102,8 @@ def save_post_to_repo(blog_data, image_data, post_slug):
 
 # ─────────────────────────────────────────────
 # TRIGGER VERCEL REDEPLOY
+# Kept as utility — primary trigger is the
+# GitHub Actions workflow step after git push
 # ─────────────────────────────────────────────
 def trigger_vercel_redeploy():
     hook_url = os.environ.get("VERCEL_DEPLOY_HOOK_URL")
@@ -1082,7 +1152,7 @@ def main():
     blog_data = None
     topic = None
 
-    # ── Check if a pillar post is due today ──
+    # Check if a pillar post is due today
     pending_pillar = get_pending_pillar()
 
     if pending_pillar:
@@ -1091,10 +1161,18 @@ def main():
         is_pillar = True
     else:
         print(f"\n📝 REGULAR POST MODE")
-        blog_data, topic = generate_blog_content()
+        # Retry up to 2 times if content comes back too short
+        for attempt in range(1, 3):
+            print(f"   Attempt {attempt}/2...")
+            blog_data, topic = generate_blog_content()
+            if blog_data and topic:
+                break
+            if attempt < 2:
+                print(f"   Content too short or failed — retrying in 15 seconds...")
+                time.sleep(15)
 
     if not blog_data or not topic:
-        print("❌ Failed to generate content. Exiting.")
+        print("❌ Failed to generate content after all attempts. Exiting.")
         print("\n" + "=" * 60)
         print("❌ Blog post automation failed.")
         print("=" * 60)
@@ -1111,26 +1189,29 @@ def main():
     # Save post to repo
     saved_file = save_post_to_repo(blog_data, image_data, slug)
 
-    # Publish to Dev.to with canonical URL
+    # Publish to Dev.to with canonical URL pointing to rentalops.ca
     success, post_url = publish_to_devto(blog_data, image_data, slug)
 
     if saved_file or success:
         save_used_topic(topic)
 
-        # Mark pillar as published so it doesn't run again
+        # Mark pillar as done so it never runs again
         if is_pillar and pending_pillar:
             save_published_pillar(pending_pillar["id"])
 
         blog_url = f"https://www.rentalops.ca/blog/{slug}"
         cluster = blog_data.get("cluster", "General")
 
-        # Log entry for PUBLISHED_POSTS
+        # Log entry to add to PUBLISHED_POSTS
         log_new_post_for_index(blog_data["title"], slug, topic, cluster)
 
         # LinkedIn
         linkedin_text = generate_linkedin_post(blog_data, blog_url)
         if linkedin_text:
-            post_to_linkedin(linkedin_text, image_data["url"] if image_data else None)
+            post_to_linkedin(
+                linkedin_text,
+                image_data["url"] if image_data else None,
+            )
 
         print("\n" + "=" * 60)
         post_type_label = "PILLAR" if is_pillar else "CLUSTER"
