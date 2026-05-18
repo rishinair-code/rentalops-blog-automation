@@ -162,6 +162,13 @@ PILLAR_POSTS = [
 # ─────────────────────────────────────────────
 PUBLISHED_POSTS = [
     {
+        "slug": "cra-compliant-bookkeeping-canadian-landlords-complete-guide",
+        "title": "CRA-Compliant Bookkeeping for Canadian Landlords: The Complete Guide",
+        "topic": "rental income tax Canada complete guide small landlords 2026",
+        "cluster": "CRA Tax & Reporting",
+    },
+    
+    {
         "slug": "converting-rental-property-to-personal-use-in-canada-a-step-by-step-guide",
         "title": "Converting Rental Property to Personal Use in Canada: A Step-by-Step Guide",
         "topic": "converting rental property back to personal use Canada",
