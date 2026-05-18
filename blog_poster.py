@@ -289,7 +289,6 @@ def generate_slug(title: str) -> str:
 
 # ─────────────────────────────────────────────
 # PERSONA AND TOPIC SELECTION
-# offset allows retry to pick a different topic
 # ─────────────────────────────────────────────
 def get_current_persona():
     day_of_year = datetime.now().timetuple().tm_yday
@@ -298,18 +297,10 @@ def get_current_persona():
 
 
 def pick_topic(persona: dict, used_topics: list, offset: int = 0) -> str | None:
-    """
-    Pick a topic for the given persona that has not been used yet.
-    offset allows retry attempts to pick a different topic.
-    Returns None if all topics are exhausted.
-    """
     available = [t for t in persona["topics"] if t not in used_topics]
-
     if not available:
         print(f"🔄 All topics for {persona['name']} used — resetting pool")
         available = persona["topics"]
-
-    # Use day_of_year + offset so retries pick a different topic
     day_of_year = datetime.now().timetuple().tm_yday
     topic_index = (day_of_year + offset) % len(available)
     topic = available[topic_index]
@@ -322,9 +313,7 @@ def pick_topic(persona: dict, used_topics: list, offset: int = 0) -> str | None:
 # ─────────────────────────────────────────────
 def get_internal_links(current_topic: str, current_cluster: str = None) -> str:
     BASE_URL = "https://www.rentalops.ca/blog"
-
     candidates = [p for p in PUBLISHED_POSTS if p["topic"] != current_topic]
-
     current_words = set(current_topic.lower().split())
     scored = []
     for post in candidates:
@@ -334,13 +323,10 @@ def get_internal_links(current_topic: str, current_cluster: str = None) -> str:
             current_cluster and post.get("cluster") == current_cluster
         ) else 0
         scored.append((keyword_score + cluster_bonus, post))
-
     scored.sort(key=lambda x: x[0], reverse=True)
     selected = [p for _, p in scored[:3]]
-
     if not selected:
         return ""
-
     links_block = "\n".join(
         f'- [{p["title"]}]({BASE_URL}/{p["slug"]})'
         for p in selected
@@ -376,15 +362,12 @@ def get_pillar_internal_links(pillar: dict) -> str:
 def get_pending_pillar() -> dict | None:
     today = datetime.now().day
     published_pillars = get_published_pillars()
-
     if today not in [1, 15]:
         return None
-
     for pillar in PILLAR_POSTS:
         if pillar["id"] not in published_pillars:
             print(f"📌 Pillar post due: {pillar['cluster']}")
             return pillar
-
     print("✅ All pillar posts already published")
     return None
 
@@ -414,13 +397,11 @@ def generate_image_query(title):
         (["guide", "complete", "everything"], "canadian landlord reading documents"),
         (["Ontario", "rules", "rights"], "ontario canada property rental"),
     ]
-
     title_lower = title.lower()
     for keywords, query in topic_map:
         if any(k.lower() in title_lower for k in keywords):
             print(f"🖼️  Image query: '{query}'")
             return query
-
     fallbacks = [
         "canadian rental property exterior",
         "apartment building Canada",
@@ -441,7 +422,6 @@ def get_unsplash_image(query):
     if not UNSPLASH_ACCESS_KEY:
         print("⚠️  UNSPLASH_ACCESS_KEY not set — skipping image")
         return None
-
     try:
         response = requests.get(
             "https://api.unsplash.com/photos/random",
@@ -471,11 +451,22 @@ def get_unsplash_image(query):
 
 # ─────────────────────────────────────────────
 # GROQ API — shared helper
+#
+# KEY CHANGE: response_format is NOT used for
+# content generation calls. Removing JSON mode
+# gives the model its full token budget for
+# content instead of spending tokens on JSON
+# structure overhead. We parse JSON manually.
+#
+# JSON mode IS still used for short structured
+# responses (LinkedIn post) where length is not
+# a concern.
 # ─────────────────────────────────────────────
 def call_groq(
     messages: list,
     max_tokens: int = 6000,
     temperature: float = 0.7,
+    force_json_mode: bool = False,
 ) -> str | None:
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
@@ -487,8 +478,12 @@ def call_groq(
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
-        "response_format": {"type": "json_object"},
     }
+    # Only add JSON mode for short structured calls
+    # NOT for long content generation
+    if force_json_mode:
+        payload["response_format"] = {"type": "json_object"}
+
     try:
         response = requests.post(
             url, headers=headers, json=payload, timeout=120
@@ -498,6 +493,72 @@ def call_groq(
     except Exception as e:
         print(f"❌ Groq API call failed: {e}")
         return None
+
+
+# ─────────────────────────────────────────────
+# JSON EXTRACTOR
+# Pulls JSON from model response even when the
+# model adds markdown fences or preamble text.
+# Needed because we removed response_format
+# for content generation calls.
+# ─────────────────────────────────────────────
+def extract_json(raw: str) -> dict | None:
+    if not raw:
+        return None
+
+    # Strip markdown code fences if present
+    cleaned = re.sub(r'^```(?:json)?\s*', '', raw.strip(), flags=re.MULTILINE)
+    cleaned = re.sub(r'\s*```$', '', cleaned.strip(), flags=re.MULTILINE)
+
+    # Try direct parse first
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    # Find the first { and last } and try parsing that block
+    start = cleaned.find('{')
+    end = cleaned.rfind('}')
+    if start != -1 and end != -1 and end > start:
+        try:
+            return json.loads(cleaned[start:end + 1])
+        except json.JSONDecodeError:
+            pass
+
+    print(f"❌ Could not extract JSON from response (first 300 chars): {raw[:300]}")
+    return None
+
+
+# ─────────────────────────────────────────────
+# DEV.TO DUPLICATE CHECK
+# Check if a canonical URL is already taken
+# before attempting to publish
+# ─────────────────────────────────────────────
+def devto_canonical_exists(canonical_url: str) -> bool:
+    """
+    Returns True if Dev.to already has an article
+    with this canonical URL — so we skip publishing.
+    Uses the Dev.to API to search our own articles.
+    """
+    if not DEVTO_API_KEY:
+        return False
+    try:
+        response = requests.get(
+            "https://dev.to/api/articles/me/published",
+            headers={"api-key": DEVTO_API_KEY},
+            params={"per_page": 100},
+            timeout=15,
+        )
+        response.raise_for_status()
+        articles = response.json()
+        for article in articles:
+            if article.get("canonical_url") == canonical_url:
+                return True
+        return False
+    except Exception as e:
+        print(f"⚠️  Could not check Dev.to for duplicates: {e}")
+        # If check fails, attempt publish anyway
+        return False
 
 
 # ─────────────────────────────────────────────
@@ -515,22 +576,20 @@ def generate_pillar_content(pillar: dict):
     messages = [
         {
             "role": "system",
-            "content": f"""You are a senior content strategist for RentalOps, a Canadian landlord
-expense tracking and tax preparation tool built for small landlords with 1-5 properties.
+            "content": """You are a senior content strategist for RentalOps, a Canadian landlord
+expense tracking and tax preparation tool for small landlords with 1-5 properties.
 
-Your audience: Canadian landlords who are NOT accountants. Regular people who own
-1-5 rental properties, overwhelmed by CRA rules, T776 forms, and provincial
-regulations. They need plain-English education, not jargon.
+Audience: Canadian landlords who are NOT accountants. Regular people overwhelmed
+by CRA rules, T776 forms, and provincial regulations. Need plain-English education.
 
-Your job: Write the definitive pillar guide on this topic. So thorough and helpful
-that a landlord bookmarks it and shares it with other landlords.
+Write the definitive pillar guide — so thorough a landlord bookmarks and shares it.
 
-RentalOps mission: Educate landlords so they understand their obligations, then
-show them how RentalOps makes compliance effortless — accurate T776 filing,
-expense tracking, and CRA-compliant records without needing an accountant for
-every question.
+RentalOps mission: Educate landlords on their obligations, then show how RentalOps
+makes compliance effortless — T776 filing, expense tracking, CRA-compliant records.
 
-You MUST respond with ONLY valid JSON. No markdown fences. Raw JSON only.""",
+IMPORTANT: Respond with a JSON object. Use this exact structure:
+{"title": "...", "metaDescription": "...", "content": "...", "tags": [...], "persona": "...", "postType": "pillar", "cluster": "..."}
+The content field must contain the full markdown article.""",
         },
         {
             "role": "user",
@@ -540,82 +599,60 @@ Suggested title: {pillar['title_hint']}
 Core topic: {pillar['topic']}
 Description: {pillar['description']}
 
-Sub-topics to cover (each gets its own H2 section of at least 400 words):
+Sub-topics — write a full H2 section (400+ words) for each:
 {cluster_posts_list}
 
 Requirements:
 - PRIMARY KEYWORD: "{pillar['topic']}" — in title, first paragraph, 2+ H2 headings
 - Title: Use suggested title or close variant. Under 70 characters.
-- Meta description: 150-160 characters EXACTLY. Include primary keyword. End with benefit.
-- Content: MINIMUM 3000 words. Write every section fully — do not summarise or skip.
-- Tone: Plain English. Reassuring. Non-accountant friendly. Explain every tax term used.
-- Structure:
-    * Introduction with relatable hook and primary keyword in first 100 words
-    * One H2 section per sub-topic above (minimum 400 words each with H3 sub-sections)
-    * "Quick Reference" section — key rules and numbers as bullet list
-    * "Common Mistakes Small Landlords Make" — minimum 3 specific mistakes
-    * "Key Takeaways" — 5-7 bullet points
-    * Conclusion with strong CTA to try RentalOps free
-- Real Canadian numbers throughout: CRA deadlines, T776 line numbers,
-  CAD amounts, penalty amounts, provincial rule references
+- metaDescription: 150-160 characters EXACTLY. Primary keyword included. Ends with benefit.
+- content: Full markdown article, minimum 3000 words.
+  Write every section in full — do not summarise or skip content.
+  Each H2 section must be at least 400 words with H3 sub-sections.
+- Tone: Plain English. Reassuring. Explain every tax term on first use.
+- Include: Introduction with hook, 5-7 H2 sections, Quick Reference section,
+  Common Mistakes section (3+ mistakes), Key Takeaways (5-7 bullets), CTA conclusion
+- Real Canadian numbers: CRA deadlines, T776 line numbers, CAD amounts, penalties
 - Mention RentalOps 3-4 times naturally tied to specific pain points{internal_links_instruction}
-- Tags: 5 specific SEO tags (real Canadian landlord search terms)
+- tags: array of 5 specific SEO search terms used by Canadian landlords
 
-Return ONLY this JSON:
-{{
-  "title": "...",
-  "metaDescription": "...",
-  "content": "... full markdown minimum 3000 words ...",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "persona": "Small Landlord",
-  "postType": "pillar",
-  "cluster": "{pillar['cluster']}"
-}}
-
-CRITICAL: content must be minimum 3000 words. Raw JSON only.""",
+Return a single JSON object. No markdown fences around it. Just the raw JSON.""",
         },
     ]
 
-    raw = call_groq(messages, max_tokens=8000, temperature=0.65)
-    if not raw:
+    raw = call_groq(messages, max_tokens=8000, temperature=0.65, force_json_mode=False)
+    blog_data = extract_json(raw)
+
+    if not blog_data:
         return None, None
 
-    try:
-        blog_data = json.loads(raw)
-        required = ["title", "metaDescription", "content", "tags"]
-        for field in required:
-            if field not in blog_data:
-                print(f"❌ Missing field: {field}")
-                return None, None
+    required = ["title", "metaDescription", "content", "tags"]
+    for field in required:
+        if field not in blog_data:
+            print(f"❌ Missing field: {field}")
+            return None, None
 
-        word_count = len(blog_data["content"].split())
-        print(f"✅ Pillar content generated")
-        print(f"   Title: {blog_data['title'][:70]}")
-        print(f"   Meta ({len(blog_data['metaDescription'])} chars): {blog_data['metaDescription']}")
-        print(f"   Word count: ~{word_count} words")
-        print(f"   Tags: {', '.join(blog_data['tags'])}")
+    # Ensure postType and cluster are set
+    blog_data["postType"] = "pillar"
+    blog_data["cluster"] = pillar["cluster"]
 
-        if word_count < 2000:
-            print(f"⚠️  WARNING: Pillar only {word_count} words — target is 3000+")
+    word_count = len(blog_data["content"].split())
+    print(f"✅ Pillar content generated")
+    print(f"   Title: {blog_data['title'][:70]}")
+    print(f"   Meta ({len(blog_data['metaDescription'])} chars): {blog_data['metaDescription']}")
+    print(f"   Word count: ~{word_count} words")
+    print(f"   Tags: {', '.join(blog_data['tags'])}")
 
-        return blog_data, pillar["topic"]
+    if word_count < 2000:
+        print(f"⚠️  WARNING: Pillar only {word_count} words — target is 3000+")
 
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON parse error: {e}")
-        return None, None
+    return blog_data, pillar["topic"]
 
 
 # ─────────────────────────────────────────────
 # REGULAR BLOG POST GENERATION
-# topic and offset passed in from main()
-# so retries pick a different topic
 # ─────────────────────────────────────────────
 def generate_blog_content(topic: str, persona: dict):
-    """
-    Generate a blog post for the given topic and persona.
-    Topic selection happens in main() so retries can
-    use a different topic without re-running persona logic.
-    """
     print(f"🎯 Target persona: {persona['name']}")
     print(f"🤖 Generating content about: {topic}")
 
@@ -647,7 +684,7 @@ def generate_blog_content(topic: str, persona: dict):
     if include_roi:
         roi_instruction = """
 - Include a section: "What This Costs You Without the Right Tools"
-  Compare manual effort (time + error risk) vs RentalOps.
+  Compare manual effort vs RentalOps. Be specific with time and money.
   e.g. "2-3 hours/month tracking receipts manually vs $6.99/month for RentalOps"."""
 
     print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
@@ -661,108 +698,97 @@ def generate_blog_content(topic: str, persona: dict):
 tracking and tax preparation tool for small landlords with 1-5 properties.
 
 Audience: Regular Canadians with 1-5 rental properties. NOT accountants.
-Confused about CRA rules, worried about audits, want to do things right
-without expensive help for every question.
+Confused about CRA rules, worried about audits, want to do things right.
 
-Tone: Plain English. Reassuring and practical. Like a knowledgeable friend
-explaining things. Real numbers, real examples, real Canadian context
-(CRA, T776, LTB, CAD amounts, provincial rules).
-
-RentalOps helps landlords track income/expenses, file T776 accurately,
-and stay CRA-compliant — without the guesswork.
+Tone: Plain English. Reassuring and practical. Real numbers, real Canadian context.
+RentalOps helps track income/expenses, file T776 accurately, stay CRA-compliant.
 
 Persona: {persona['name']} — {persona['description']}
-You MUST respond with ONLY valid JSON. No markdown fences. Raw JSON only.""",
+
+IMPORTANT: Respond with a JSON object using this exact structure:
+{{"title": "...", "metaDescription": "...", "content": "...", "tags": [...], "persona": "...", "postType": "cluster", "cluster": "..."}}
+The content field must contain the full markdown article with all sections complete.""",
         },
         {
             "role": "user",
-            "content": f"""Write a complete blog post about: {topic}
+            "content": f"""Write a complete, thorough blog post about: {topic}
 
-The reader is a Canadian landlord with 1-5 properties who is NOT an accountant
-and is genuinely confused or worried about this topic.
+The reader is a Canadian landlord with 1-5 properties — NOT an accountant —
+who is confused or worried about this topic.
 
 Requirements:
 - PRIMARY KEYWORD: "{topic}" — in title, first paragraph, at least 2 H2 headings
-- Title: Natural, keyword-first. Under 65 characters if possible.
-- Meta description: 150-160 characters EXACTLY. Primary keyword included.
-- Content: Write a THOROUGH, DETAILED post. Every section must be fully developed.
-  Do not summarise — explain fully with examples and real numbers.
-  Target length: as long as needed to cover the topic properly (aim for 1200+ words).
+- title: Natural, keyword-first. Under 65 characters if possible.
+- metaDescription: 150-160 characters EXACTLY. Primary keyword included.
+- content: Write a THOROUGH article. Do not stop after a brief overview.
+  Each section must be fully developed with real examples and Canadian specifics.
+  Write until the topic is completely covered. Do not end early.
+  Minimum expectation: Introduction + 4-6 full H2 sections + Mistakes + Takeaways + CTA.
+  Each H2 section must be at least 200 words with examples.
 - Tone: Plain English. Conversational. Explain every tax term on first use.
-- Structure:
-    * Introduction — relatable hook, primary keyword in first 100 words
-    * 4-6 H2 sections — keyword variants in headings, H3 sub-headings within
-    * Each H2 section must be substantive — minimum 200 words per section
-    * Real Canadian numbers: CRA deadlines, T776 line numbers, CAD examples
-    * "Common Mistakes" — at least 3 specific mistakes small landlords make
-    * "Key Takeaways" — up to 5 bullet points in plain English
-    * Conclusion — strong CTA to try RentalOps free{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
+- Include throughout: CRA deadlines, T776 line numbers, CAD dollar examples,
+  provincial rule references, specific penalty amounts
+- "Common Mistakes" section: at least 3 specific mistakes small landlords make
+- "Key Takeaways": up to 5 bullet points, plain English
+- Conclusion: strong CTA to try RentalOps free{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
 - Mention RentalOps 2-3 times naturally tied to specific pain points
-- Tags: 5 SEO tags — real Canadian landlord search terms
+- tags: array of 5 real Canadian landlord search terms
 
-Return ONLY this JSON:
-{{
-  "title": "...",
-  "metaDescription": "...",
-  "content": "... full markdown ...",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "persona": "{persona['name']}",
-  "postType": "cluster",
-  "cluster": "{current_cluster or 'General'}"
-}}
-
-CRITICAL: metaDescription must be 150-160 characters. Raw JSON only.""",
+Return a single JSON object. No markdown fences. Just the raw JSON.""",
         },
     ]
 
-    raw = call_groq(messages, max_tokens=6000, temperature=0.7)
-    if not raw:
+    raw = call_groq(messages, max_tokens=6000, temperature=0.7, force_json_mode=False)
+    blog_data = extract_json(raw)
+
+    if not blog_data:
         return None
 
-    try:
-        blog_data = json.loads(raw)
-        required = ["title", "metaDescription", "content", "tags"]
-        for field in required:
-            if field not in blog_data:
-                print(f"❌ Missing required field: {field}")
-                return None
-
-        word_count = len(blog_data["content"].split())
-        print(f"✅ Content generated")
-        print(f"   Cluster: {blog_data.get('cluster', 'General')}")
-        print(f"   Title: {blog_data['title'][:70]}")
-        print(
-            f"   Meta ({len(blog_data['metaDescription'])} chars): "
-            f"{blog_data['metaDescription']}"
-        )
-        print(f"   Tags: {', '.join(blog_data['tags'])}")
-        print(f"   Word count: ~{word_count} words")
-
-        # Warn but do not fail — publish what we have
-        # The model consistently caps around 900-1100 words with JSON format
-        # We optimise the prompt but do not block publishing over word count
-        if word_count < 600:
-            print(f"⚠️  Word count critically low ({word_count}) — skipping")
+    required = ["title", "metaDescription", "content", "tags"]
+    for field in required:
+        if field not in blog_data:
+            print(f"❌ Missing required field: {field}")
             return None
 
-        if word_count < 1000:
-            print(f"⚠️  Word count below target ({word_count} words) — publishing anyway")
+    # Ensure postType and cluster are always set
+    blog_data["postType"] = "cluster"
+    blog_data["cluster"] = current_cluster or "General"
 
-        return blog_data
+    word_count = len(blog_data["content"].split())
+    print(f"✅ Content generated")
+    print(f"   Cluster: {blog_data.get('cluster', 'General')}")
+    print(f"   Title: {blog_data['title'][:70]}")
+    print(
+        f"   Meta ({len(blog_data['metaDescription'])} chars): "
+        f"{blog_data['metaDescription']}"
+    )
+    print(f"   Tags: {', '.join(blog_data['tags'])}")
+    print(f"   Word count: ~{word_count} words")
 
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON parsing error: {e}")
+    if word_count < 600:
+        print(f"⚠️  Word count critically low ({word_count}) — skipping")
         return None
-    except Exception as e:
-        print(f"❌ Content generation failed: {e}")
-        return None
+
+    if word_count < 1000:
+        print(f"⚠️  Word count below target ({word_count} words) — publishing anyway")
+
+    return blog_data
 
 
 # ─────────────────────────────────────────────
 # PUBLISH TO DEV.TO
+# Checks for duplicate canonical before posting
 # ─────────────────────────────────────────────
 def publish_to_devto(blog_data, image_data, slug):
     print("📤 Publishing to Dev.to...")
+
+    canonical_url = f"https://www.rentalops.ca/blog/{slug}"
+
+    # Check if this canonical URL is already on Dev.to
+    if devto_canonical_exists(canonical_url):
+        print(f"⚠️  Dev.to already has a post with canonical: {canonical_url}")
+        print(f"   Skipping Dev.to — post already exists there")
+        return False, None
 
     content = blog_data["content"]
     if image_data:
@@ -772,7 +798,6 @@ def publish_to_devto(blog_data, image_data, slug):
         return tag.lower().replace(" ", "").replace("-", "").replace("/", "")[:20]
 
     tags = [clean_tag(t) for t in blog_data.get("tags", [])[:4]]
-    canonical_url = f"https://www.rentalops.ca/blog/{slug}"
 
     article_payload = {
         "article": {
@@ -825,8 +850,8 @@ def generate_linkedin_post(blog_data, blog_url):
 
     if post_type == "pillar":
         type_instruction = (
-            "This is a COMPREHENSIVE GUIDE (pillar post). "
-            "Hook should reflect it is the definitive resource on this topic."
+            "This is a COMPREHENSIVE GUIDE. "
+            "Hook should convey it is the definitive resource on this topic."
         )
     else:
         type_instruction = (
@@ -839,9 +864,9 @@ def generate_linkedin_post(blog_data, blog_url):
             "role": "system",
             "content": """You are a LinkedIn content writer for RentalOps, a Canadian landlord
 tax and expense tracking tool for small landlords with 1-5 properties.
-Write posts that feel human — like a landlord sharing something useful.
+Write posts that feel human — like a landlord sharing something useful with others.
 Not corporate. Not salesy.
-You MUST respond with ONLY valid JSON. No markdown fences. Raw JSON only.""",
+Respond with a JSON object: {"post": "full linkedin post text including hashtags"}""",
         },
         {
             "role": "user",
@@ -852,25 +877,23 @@ Summary: {blog_data['metaDescription']}
 Persona: {blog_data.get('persona', 'Canadian landlord')}
 Cluster: {cluster}
 URL: {blog_url}
-Type: {type_instruction}
+Type guidance: {type_instruction}
 
 Rules:
 - 150-200 words maximum
 - First line is the hook — impossible to scroll past
-- Human voice — landlord sharing with landlords, not a marketer
+- Human voice — landlord sharing with landlords, not marketing
 - Specific Canadian context (CRA, T776, Ontario LTB, etc.)
 - One clear CTA linking to the article
 - 4-5 relevant hashtags on last line
 - Zero buzzwords
 
-Return ONLY this JSON:
-{{
-  "post": "full linkedin post text including hashtags"
-}}""",
+Return only this JSON: {{"post": "full post text with hashtags"}}""",
         },
     ]
 
-    raw = call_groq(messages, max_tokens=500, temperature=0.8)
+    # LinkedIn post is short so JSON mode is fine here
+    raw = call_groq(messages, max_tokens=500, temperature=0.8, force_json_mode=True)
     if not raw:
         return None
     try:
@@ -885,7 +908,6 @@ Return ONLY this JSON:
 
 def upload_image_to_linkedin(access_token, image_url, org_id):
     print("🖼️  Uploading image to LinkedIn...")
-
     try:
         image_response = requests.get(image_url, timeout=15)
         image_response.raise_for_status()
@@ -955,6 +977,16 @@ def post_to_linkedin(post_text, image_url=None):
         print("⚠️  LINKEDIN_ORGANIZATION_ID not set — skipping")
         return False
 
+    # Validate org ID format — must be numeric only
+    org_id_clean = org_id.strip()
+    if not org_id_clean.isdigit():
+        print(f"❌ LINKEDIN_ORGANIZATION_ID must be a plain number.")
+        print(f"   Current value appears to have extra characters.")
+        print(f"   Go to LinkedIn → Company Page → Admin tools → Account")
+        print(f"   The org ID is the number in the URL: linkedin.com/company/12345678/admin/")
+        print(f"   Update the GitHub secret with just the number, no other text.")
+        return False
+
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json",
@@ -980,9 +1012,9 @@ def post_to_linkedin(post_text, image_url=None):
 
     image_urn = None
     if image_url:
-        image_urn = upload_image_to_linkedin(access_token, image_url, org_id)
+        image_urn = upload_image_to_linkedin(access_token, image_url, org_id_clean)
 
-    author_urn = f"urn:li:organization:{org_id}"
+    author_urn = f"urn:li:organization:{org_id_clean}"
 
     if image_urn:
         post_payload = {
@@ -1084,28 +1116,6 @@ def log_new_post_for_index(title: str, slug: str, topic: str, cluster: str):
 
 
 # ─────────────────────────────────────────────
-# TRIGGER VERCEL REDEPLOY (utility — kept for reference)
-# Primary trigger is the GitHub Actions workflow
-# ─────────────────────────────────────────────
-def trigger_vercel_redeploy():
-    hook_url = os.environ.get("VERCEL_DEPLOY_HOOK_URL")
-    if not hook_url:
-        print("⚠️  VERCEL_DEPLOY_HOOK_URL not set — skipping")
-        return False
-    try:
-        response = requests.post(hook_url, timeout=15)
-        if response.status_code in [200, 201]:
-            job_id = response.json().get("job", {}).get("id", "unknown")
-            print(f"✅ Vercel redeploy triggered! Job ID: {job_id}")
-            return True
-        print(f"❌ Vercel hook returned: {response.status_code}")
-        return False
-    except Exception as e:
-        print(f"❌ Vercel redeploy failed: {e}")
-        return False
-
-
-# ─────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────
 def main():
@@ -1128,8 +1138,7 @@ def main():
         is_pillar = True
     else:
         print(f"\n📝 REGULAR POST MODE")
-        # Try up to 3 topics — each attempt uses a different topic offset
-        # so we never retry the same failing topic twice
+        # Try up to 3 different topics via offset
         for attempt in range(3):
             topic = pick_topic(persona, used_topics, offset=attempt)
             print(f"\n   Attempt {attempt + 1}/3 — topic: {topic}")
@@ -1158,7 +1167,7 @@ def main():
     # Save post to repo
     saved_file = save_post_to_repo(blog_data, image_data, slug)
 
-    # Publish to Dev.to with canonical URL
+    # Publish to Dev.to (skips gracefully if already exists)
     success, post_url = publish_to_devto(blog_data, image_data, slug)
 
     if saved_file or success:
