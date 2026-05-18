@@ -451,16 +451,9 @@ def get_unsplash_image(query):
 
 # ─────────────────────────────────────────────
 # GROQ API — shared helper
-#
-# KEY CHANGE: response_format is NOT used for
-# content generation calls. Removing JSON mode
-# gives the model its full token budget for
-# content instead of spending tokens on JSON
-# structure overhead. We parse JSON manually.
-#
-# JSON mode IS still used for short structured
-# responses (LinkedIn post) where length is not
-# a concern.
+# force_json_mode=True only for short calls
+# Content generation uses False to get full
+# token budget — we handle parsing manually
 # ─────────────────────────────────────────────
 def call_groq(
     messages: list,
@@ -479,8 +472,6 @@ def call_groq(
         "temperature": temperature,
         "max_tokens": max_tokens,
     }
-    # Only add JSON mode for short structured calls
-    # NOT for long content generation
     if force_json_mode:
         payload["response_format"] = {"type": "json_object"}
 
@@ -496,50 +487,89 @@ def call_groq(
 
 
 # ─────────────────────────────────────────────
+# JSON REPAIR
+# Fixes unescaped newlines/tabs inside JSON
+# string values — the main cause of parse
+# failures when not using JSON mode
+# ─────────────────────────────────────────────
+def repair_json(raw: str) -> str:
+    """
+    Walk the raw string character by character.
+    Inside a JSON string value, replace literal
+    newlines/tabs/carriage returns with their
+    escaped equivalents so json.loads() works.
+    """
+    # Find outermost braces
+    start = raw.find('{')
+    end = raw.rfind('}')
+    if start == -1 or end == -1:
+        return raw
+    raw = raw[start:end + 1]
+
+    result = []
+    in_string = False
+    escape_next = False
+
+    for char in raw:
+        if escape_next:
+            result.append(char)
+            escape_next = False
+            continue
+
+        if char == '\\':
+            result.append(char)
+            escape_next = True
+            continue
+
+        if char == '"':
+            in_string = not in_string
+            result.append(char)
+            continue
+
+        if in_string:
+            if char == '\n':
+                result.append('\\n')
+            elif char == '\r':
+                result.append('\\r')
+            elif char == '\t':
+                result.append('\\t')
+            else:
+                result.append(char)
+        else:
+            result.append(char)
+
+    return ''.join(result)
+
+
+# ─────────────────────────────────────────────
 # JSON EXTRACTOR
-# Pulls JSON from model response even when the
-# model adds markdown fences or preamble text.
-# Needed because we removed response_format
-# for content generation calls.
+# Strips markdown fences then uses repair_json
+# before attempting json.loads()
 # ─────────────────────────────────────────────
 def extract_json(raw: str) -> dict | None:
     if not raw:
         return None
 
-    # Strip markdown code fences if present
+    # Strip markdown code fences
     cleaned = re.sub(r'^```(?:json)?\s*', '', raw.strip(), flags=re.MULTILINE)
     cleaned = re.sub(r'\s*```$', '', cleaned.strip(), flags=re.MULTILINE)
 
-    # Try direct parse first
+    # Repair unescaped control characters
+    repaired = repair_json(cleaned)
+
+    # Try parsing repaired string
     try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        pass
-
-    # Find the first { and last } and try parsing that block
-    start = cleaned.find('{')
-    end = cleaned.rfind('}')
-    if start != -1 and end != -1 and end > start:
-        try:
-            return json.loads(cleaned[start:end + 1])
-        except json.JSONDecodeError:
-            pass
-
-    print(f"❌ Could not extract JSON from response (first 300 chars): {raw[:300]}")
-    return None
+        return json.loads(repaired)
+    except json.JSONDecodeError as e:
+        print(f"❌ JSON parse failed after repair: {e}")
+        print(f"   First 300 chars of repaired: {repaired[:300]}")
+        return None
 
 
 # ─────────────────────────────────────────────
 # DEV.TO DUPLICATE CHECK
-# Check if a canonical URL is already taken
-# before attempting to publish
 # ─────────────────────────────────────────────
 def devto_canonical_exists(canonical_url: str) -> bool:
-    """
-    Returns True if Dev.to already has an article
-    with this canonical URL — so we skip publishing.
-    Uses the Dev.to API to search our own articles.
-    """
     if not DEVTO_API_KEY:
         return False
     try:
@@ -557,7 +587,6 @@ def devto_canonical_exists(canonical_url: str) -> bool:
         return False
     except Exception as e:
         print(f"⚠️  Could not check Dev.to for duplicates: {e}")
-        # If check fails, attempt publish anyway
         return False
 
 
@@ -580,16 +609,20 @@ def generate_pillar_content(pillar: dict):
 expense tracking and tax preparation tool for small landlords with 1-5 properties.
 
 Audience: Canadian landlords who are NOT accountants. Regular people overwhelmed
-by CRA rules, T776 forms, and provincial regulations. Need plain-English education.
+by CRA rules, T776 forms, and provincial regulations. Need plain-English guidance.
 
-Write the definitive pillar guide — so thorough a landlord bookmarks and shares it.
+Write the definitive pillar guide — thorough enough that landlords bookmark and share it.
 
-RentalOps mission: Educate landlords on their obligations, then show how RentalOps
-makes compliance effortless — T776 filing, expense tracking, CRA-compliant records.
+RentalOps mission: Educate landlords on their obligations, show how RentalOps makes
+compliance effortless — T776 filing, expense tracking, CRA-compliant records.
 
-IMPORTANT: Respond with a JSON object. Use this exact structure:
-{"title": "...", "metaDescription": "...", "content": "...", "tags": [...], "persona": "...", "postType": "pillar", "cluster": "..."}
-The content field must contain the full markdown article.""",
+OUTPUT FORMAT: You must output a single valid JSON object.
+The JSON must have these exact keys:
+  title, metaDescription, content, tags, persona, postType, cluster
+
+The content value must be a single string containing the full markdown article.
+All newlines inside the content string must be represented as \\n (escaped).
+Do not output any text outside the JSON object.""",
         },
         {
             "role": "user",
@@ -604,19 +637,21 @@ Sub-topics — write a full H2 section (400+ words) for each:
 
 Requirements:
 - PRIMARY KEYWORD: "{pillar['topic']}" — in title, first paragraph, 2+ H2 headings
-- Title: Use suggested title or close variant. Under 70 characters.
+- title: Suggested title or close variant. Under 70 characters.
 - metaDescription: 150-160 characters EXACTLY. Primary keyword included. Ends with benefit.
-- content: Full markdown article, minimum 3000 words.
-  Write every section in full — do not summarise or skip content.
-  Each H2 section must be at least 400 words with H3 sub-sections.
+- content: Minimum 3000 words. Every section fully written. No summarising or skipping.
+  Each H2 section at least 400 words with H3 sub-sections.
 - Tone: Plain English. Reassuring. Explain every tax term on first use.
-- Include: Introduction with hook, 5-7 H2 sections, Quick Reference section,
-  Common Mistakes section (3+ mistakes), Key Takeaways (5-7 bullets), CTA conclusion
+- Include: Introduction with hook, 5-7 H2 sections, Quick Reference,
+  Common Mistakes (3+ mistakes), Key Takeaways (5-7 bullets), CTA conclusion
 - Real Canadian numbers: CRA deadlines, T776 line numbers, CAD amounts, penalties
 - Mention RentalOps 3-4 times naturally tied to specific pain points{internal_links_instruction}
 - tags: array of 5 specific SEO search terms used by Canadian landlords
+- persona: "Small Landlord"
+- postType: "pillar"
+- cluster: "{pillar['cluster']}"
 
-Return a single JSON object. No markdown fences around it. Just the raw JSON.""",
+Output only the JSON object. No text before or after it.""",
         },
     ]
 
@@ -632,7 +667,6 @@ Return a single JSON object. No markdown fences around it. Just the raw JSON."""
             print(f"❌ Missing field: {field}")
             return None, None
 
-    # Ensure postType and cluster are set
     blog_data["postType"] = "pillar"
     blog_data["cluster"] = pillar["cluster"]
 
@@ -656,7 +690,6 @@ def generate_blog_content(topic: str, persona: dict):
     print(f"🎯 Target persona: {persona['name']}")
     print(f"🤖 Generating content about: {topic}")
 
-    # Determine cluster
     current_cluster = None
     for pillar in PILLAR_POSTS:
         if topic in pillar["cluster_posts"]:
@@ -664,7 +697,6 @@ def generate_blog_content(topic: str, persona: dict):
             break
     print(f"🗂️  Cluster: {current_cluster or 'General'}")
 
-    # Link back to pillar if published
     pillar_link_instruction = ""
     published_pillars = get_published_pillars()
     for pillar in PILLAR_POSTS:
@@ -684,7 +716,7 @@ def generate_blog_content(topic: str, persona: dict):
     if include_roi:
         roi_instruction = """
 - Include a section: "What This Costs You Without the Right Tools"
-  Compare manual effort vs RentalOps. Be specific with time and money.
+  Compare manual effort vs RentalOps. Specific time and money examples.
   e.g. "2-3 hours/month tracking receipts manually vs $6.99/month for RentalOps"."""
 
     print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
@@ -705,36 +737,42 @@ RentalOps helps track income/expenses, file T776 accurately, stay CRA-compliant.
 
 Persona: {persona['name']} — {persona['description']}
 
-IMPORTANT: Respond with a JSON object using this exact structure:
-{{"title": "...", "metaDescription": "...", "content": "...", "tags": [...], "persona": "...", "postType": "cluster", "cluster": "..."}}
-The content field must contain the full markdown article with all sections complete.""",
+OUTPUT FORMAT: You must output a single valid JSON object.
+The JSON must have these exact keys:
+  title, metaDescription, content, tags, persona, postType, cluster
+
+The content value must be a single string with the full markdown article.
+All newlines in the content string must be written as \\n (escaped newline).
+Do not output any text outside the JSON object.""",
         },
         {
             "role": "user",
-            "content": f"""Write a complete, thorough blog post about: {topic}
+            "content": f"""Write a complete blog post about: {topic}
 
 The reader is a Canadian landlord with 1-5 properties — NOT an accountant —
-who is confused or worried about this topic.
+confused or worried about this topic. Start from their perspective.
 
 Requirements:
 - PRIMARY KEYWORD: "{topic}" — in title, first paragraph, at least 2 H2 headings
 - title: Natural, keyword-first. Under 65 characters if possible.
 - metaDescription: 150-160 characters EXACTLY. Primary keyword included.
-- content: Write a THOROUGH article. Do not stop after a brief overview.
-  Each section must be fully developed with real examples and Canadian specifics.
-  Write until the topic is completely covered. Do not end early.
-  Minimum expectation: Introduction + 4-6 full H2 sections + Mistakes + Takeaways + CTA.
-  Each H2 section must be at least 200 words with examples.
-- Tone: Plain English. Conversational. Explain every tax term on first use.
-- Include throughout: CRA deadlines, T776 line numbers, CAD dollar examples,
+- content: Write a THOROUGH article. Fully develop every section.
+  Do not stop after a brief overview. Write until the topic is completely covered.
+  Minimum structure: Introduction + 4-6 full H2 sections + Mistakes + Takeaways + CTA.
+  Each H2 section at least 200 words with real Canadian examples.
+- Tone: Plain English. Explain every tax term on first use.
+- Include: CRA deadlines, T776 line numbers, CAD dollar examples,
   provincial rule references, specific penalty amounts
 - "Common Mistakes" section: at least 3 specific mistakes small landlords make
 - "Key Takeaways": up to 5 bullet points, plain English
 - Conclusion: strong CTA to try RentalOps free{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
 - Mention RentalOps 2-3 times naturally tied to specific pain points
 - tags: array of 5 real Canadian landlord search terms
+- persona: "{persona['name']}"
+- postType: "cluster"
+- cluster: "{current_cluster or 'General'}"
 
-Return a single JSON object. No markdown fences. Just the raw JSON.""",
+Output only the JSON object. No text before or after it.""",
         },
     ]
 
@@ -750,7 +788,6 @@ Return a single JSON object. No markdown fences. Just the raw JSON.""",
             print(f"❌ Missing required field: {field}")
             return None
 
-    # Ensure postType and cluster are always set
     blog_data["postType"] = "cluster"
     blog_data["cluster"] = current_cluster or "General"
 
@@ -777,17 +814,15 @@ Return a single JSON object. No markdown fences. Just the raw JSON.""",
 
 # ─────────────────────────────────────────────
 # PUBLISH TO DEV.TO
-# Checks for duplicate canonical before posting
 # ─────────────────────────────────────────────
 def publish_to_devto(blog_data, image_data, slug):
     print("📤 Publishing to Dev.to...")
 
     canonical_url = f"https://www.rentalops.ca/blog/{slug}"
 
-    # Check if this canonical URL is already on Dev.to
     if devto_canonical_exists(canonical_url):
-        print(f"⚠️  Dev.to already has a post with canonical: {canonical_url}")
-        print(f"   Skipping Dev.to — post already exists there")
+        print(f"⚠️  Dev.to already has post with canonical: {canonical_url}")
+        print(f"   Skipping Dev.to — already exists")
         return False, None
 
     content = blog_data["content"]
@@ -877,7 +912,7 @@ Summary: {blog_data['metaDescription']}
 Persona: {blog_data.get('persona', 'Canadian landlord')}
 Cluster: {cluster}
 URL: {blog_url}
-Type guidance: {type_instruction}
+Type: {type_instruction}
 
 Rules:
 - 150-200 words maximum
@@ -892,7 +927,6 @@ Return only this JSON: {{"post": "full post text with hashtags"}}""",
         },
     ]
 
-    # LinkedIn post is short so JSON mode is fine here
     raw = call_groq(messages, max_tokens=500, temperature=0.8, force_json_mode=True)
     if not raw:
         return None
@@ -977,14 +1011,10 @@ def post_to_linkedin(post_text, image_url=None):
         print("⚠️  LINKEDIN_ORGANIZATION_ID not set — skipping")
         return False
 
-    # Validate org ID format — must be numeric only
     org_id_clean = org_id.strip()
     if not org_id_clean.isdigit():
-        print(f"❌ LINKEDIN_ORGANIZATION_ID must be a plain number.")
-        print(f"   Current value appears to have extra characters.")
-        print(f"   Go to LinkedIn → Company Page → Admin tools → Account")
-        print(f"   The org ID is the number in the URL: linkedin.com/company/12345678/admin/")
-        print(f"   Update the GitHub secret with just the number, no other text.")
+        print(f"❌ LINKEDIN_ORGANIZATION_ID must be a plain number — skipping")
+        print(f"   Find it in: linkedin.com/company/[number]/admin/")
         return False
 
     headers = {
@@ -1129,7 +1159,6 @@ def main():
     persona = get_current_persona()
     used_topics = get_used_topics()
 
-    # Check if a pillar post is due today
     pending_pillar = get_pending_pillar()
 
     if pending_pillar:
@@ -1138,7 +1167,6 @@ def main():
         is_pillar = True
     else:
         print(f"\n📝 REGULAR POST MODE")
-        # Try up to 3 different topics via offset
         for attempt in range(3):
             topic = pick_topic(persona, used_topics, offset=attempt)
             print(f"\n   Attempt {attempt + 1}/3 — topic: {topic}")
@@ -1156,18 +1184,13 @@ def main():
         print("=" * 60)
         return
 
-    # Generate slug
     slug = generate_slug(blog_data["title"])
     print(f"🔗 Slug: {slug}")
 
-    # Get cover image
     image_search_query = generate_image_query(blog_data["title"])
     image_data = get_unsplash_image(image_search_query)
 
-    # Save post to repo
     saved_file = save_post_to_repo(blog_data, image_data, slug)
-
-    # Publish to Dev.to (skips gracefully if already exists)
     success, post_url = publish_to_devto(blog_data, image_data, slug)
 
     if saved_file or success:
