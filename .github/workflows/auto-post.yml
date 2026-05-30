@@ -34,7 +34,6 @@ jobs:
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_ORGANIZATION_ID: ${{ secrets.LINKEDIN_ORGANIZATION_ID }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: python blog_poster.py
 
       - name: Commit posts and topics log
@@ -45,23 +44,3 @@ jobs:
           git add published_pillars.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "Add new blog post and update topics log"
           git push
-
-      - name: Wait for GitHub to register the commit
-        run: |
-          echo "⏳ Waiting 20 seconds for GitHub API to reflect new commit..."
-          sleep 20
-
-      - name: Trigger Vercel redeploy
-        run: |
-          echo "🚀 Triggering Vercel redeploy..."
-          RESPONSE=$(curl -s -o /tmp/vercel_response.json -w "%{http_code}" \
-            -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}")
-          echo "HTTP Status: $RESPONSE"
-          cat /tmp/vercel_response.json
-          if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "201" ]; then
-            echo "✅ Vercel redeploy triggered successfully"
-            echo "🗺️  Sitemap will update in ~3 minutes"
-          else
-            echo "❌ Vercel deploy hook failed with status $RESPONSE"
-            exit 1
-          fi
