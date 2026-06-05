@@ -12,7 +12,7 @@ DEVTO_API_KEY = os.environ.get('DEVTO_API_KEY')
 UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
 
 # ─────────────────────────────────────────────
-# PERSONAS
+# PERSONAS & HIGH-INTENT CRA TOPICS
 # ─────────────────────────────────────────────
 PERSONAS = [
     {
@@ -21,6 +21,7 @@ PERSONAS = [
         "topics": [
             "rental property tax deductions Canada 2026",
             "how to fill out T776 form Canada step by step",
+            "CRA Line 8960: Repairs vs Capital Expenses for Canadian Landlords",
             "Ontario landlord tenant board rules 2026",
             "how to screen tenants legally Canada",
             "security deposit rules Ontario landlords",
@@ -31,6 +32,7 @@ PERSONAS = [
             "CRA audit rental income what triggers it Canada",
             "is rental income taxable in Canada",
             "landlord tax deductions Canada complete guide",
+            "what can landlords claim CRA landlord tax deductions checklist",
         ],
     },
     {
@@ -38,6 +40,7 @@ PERSONAS = [
         "description": "A small landlord with 2-5 properties looking to manage efficiently and minimize tax burden without an accountant for every question.",
         "topics": [
             "tracking rental income expenses multiple properties Canada",
+            "Can Landlords Deduct Mortgage Interest in Canada Line 8710",
             "capital cost allowance rental property Canada explained",
             "GST HST Canadian landlords what you need to know",
             "how to incorporate rental properties Canada",
@@ -58,6 +61,7 @@ PERSONAS = [
             "tax rules renting out principal residence Canada",
             "reporting rental income part year landlord Canada",
             "renting out basement suite Canada rules",
+            "CRA Line 9220: Deducting Utilities for a Basement Suite",
             "capital gains selling rental property Canada",
             "failing to report rental income CRA consequences",
             "short term vs long term rental tax rules Canada",
@@ -77,7 +81,7 @@ PERSONAS = [
             "home office deduction landlord Canada",
             "record keeping requirements Canadian landlords CRA",
             "splitting rental income spouse Canada tax",
-            "mileage travel deductions landlord Canada",
+            "How to Calculate Motor Vehicle Expenses for Landlords Line 9281",
             "rental property accounting software vs spreadsheets Canada",
             "property management software Canada landlords",
             "tax season preparation part time landlord Canada",
@@ -90,7 +94,7 @@ PERSONAS = [
 ]
 
 # ─────────────────────────────────────────────
-# PILLAR POSTS
+# PILLAR POSTS (ALIGNED TO YOUR REVENUE PIPELINE)
 # ─────────────────────────────────────────────
 PILLAR_POSTS = [
     {
@@ -98,16 +102,16 @@ PILLAR_POSTS = [
         "cluster": "CRA Tax & Reporting",
         "topic": "rental income tax Canada complete guide small landlords 2026",
         "title_hint": "Rental Income Tax in Canada: Complete Guide for Small Landlords (2026)",
-        "description": "The definitive guide covering everything a 1-5 property Canadian landlord needs to know about rental income tax, T776, CRA compliance, and deductions.",
+        "description": "The definitive guide covering everything a 1-3 property Canadian landlord needs to know about rental income tax, T776, CRA compliance, and deductions.",
         "target_word_count": 3500,
         "cluster_posts": [
             "rental property tax deductions Canada 2026",
             "how to fill out T776 form Canada step by step",
-            "CRA audit rental income what triggers it Canada",
-            "is rental income taxable in Canada",
-            "landlord tax deductions Canada complete guide",
-            "failing to report rental income CRA consequences",
-            "year end tax checklist Canadian landlords multiple properties",
+            "CRA Line 8960: Repairs vs Capital Expenses for Canadian Landlords",
+            "Can Landlords Deduct Mortgage Interest in Canada Line 8710",
+            "CRA Line 9220: Deducting Utilities for a Basement Suite",
+            "How to Calculate Motor Vehicle Expenses for Landlords Line 9281",
+            "what can landlords claim CRA landlord tax deductions checklist",
         ],
         "internal_links": [
             {
@@ -167,7 +171,12 @@ PUBLISHED_POSTS = [
         "topic": "rental income tax Canada complete guide small landlords 2026",
         "cluster": "CRA Tax & Reporting",
     },
-    
+    {
+        "slug": "ontario-landlord-guide-2026",
+        "title": "Ontario Landlord Guide 2026: Rules, Rights and Responsibilities",
+        "topic": "Ontario landlord guide 2026 rules rights responsibilities small landlords",
+        "cluster": "Ontario Landlord Rules",
+    },
     {
         "slug": "converting-rental-property-to-personal-use-in-canada-a-step-by-step-guide",
         "title": "Converting Rental Property to Personal Use in Canada: A Step-by-Step Guide",
@@ -224,9 +233,6 @@ PUBLISHED_POSTS = [
     },
 ]
 
-# ─────────────────────────────────────────────
-# PILLAR POST TRACKING
-# ─────────────────────────────────────────────
 PILLAR_POSTS_FILE = "published_pillars.json"
 
 def get_published_pillars():
@@ -250,10 +256,6 @@ def save_published_pillar(pillar_id):
     except Exception as e:
         print(f"⚠️  Could not save pillar: {e}")
 
-
-# ─────────────────────────────────────────────
-# USED TOPICS
-# ─────────────────────────────────────────────
 def get_used_topics():
     try:
         if os.path.exists("used_topics.json"):
@@ -268,7 +270,6 @@ def get_used_topics():
         print(f"⚠️  Could not read used topics: {e}")
         return []
 
-
 def save_used_topic(topic):
     try:
         used = get_used_topics()
@@ -280,10 +281,6 @@ def save_used_topic(topic):
     except Exception as e:
         print(f"⚠️  Could not save used topic: {e}")
 
-
-# ─────────────────────────────────────────────
-# SLUG GENERATION
-# ─────────────────────────────────────────────
 def generate_slug(title: str) -> str:
     slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
     if len(slug) > 70:
@@ -293,15 +290,10 @@ def generate_slug(title: str) -> str:
             slug = slug[:last_hyphen]
     return slug
 
-
-# ─────────────────────────────────────────────
-# PERSONA AND TOPIC SELECTION
-# ─────────────────────────────────────────────
 def get_current_persona():
     day_of_year = datetime.now().timetuple().tm_yday
     persona_index = day_of_year % len(PERSONAS)
     return PERSONAS[persona_index]
-
 
 def pick_topic(persona: dict, used_topics: list, offset: int = 0) -> str | None:
     available = [t for t in persona["topics"] if t not in used_topics]
@@ -314,10 +306,6 @@ def pick_topic(persona: dict, used_topics: list, offset: int = 0) -> str | None:
     print(f"🤖 Topic (offset {offset}): {topic}")
     return topic
 
-
-# ─────────────────────────────────────────────
-# INTERNAL LINKS BUILDER
-# ─────────────────────────────────────────────
 def get_internal_links(current_topic: str, current_cluster: str = None) -> str:
     BASE_URL = "https://www.rentalops.ca/blog"
     candidates = [p for p in PUBLISHED_POSTS if p["topic"] != current_topic]
@@ -326,46 +314,30 @@ def get_internal_links(current_topic: str, current_cluster: str = None) -> str:
     for post in candidates:
         post_words = set(post["topic"].lower().split())
         keyword_score = len(current_words & post_words)
-        cluster_bonus = 2 if (
-            current_cluster and post.get("cluster") == current_cluster
-        ) else 0
+        cluster_bonus = 2 if (current_cluster and post.get("cluster") == current_cluster) else 0
         scored.append((keyword_score + cluster_bonus, post))
     scored.sort(key=lambda x: x[0], reverse=True)
     selected = [p for _, p in scored[:3]]
     if not selected:
         return ""
-    links_block = "\n".join(
-        f'- [{p["title"]}]({BASE_URL}/{p["slug"]})'
-        for p in selected
-    )
+    links_block = "\n".join(f'- [{p["title"]}]({BASE_URL}/{p["slug"]})' for p in selected)
     return f"""
 - Naturally include 2-3 internal links to related RentalOps blog posts within the article body.
   Use the anchor text and URLs exactly as listed below.
   Only link where it makes contextual sense — do NOT force links:
 {links_block}"""
 
-
-# ─────────────────────────────────────────────
-# PILLAR INTERNAL LINKS
-# ─────────────────────────────────────────────
 def get_pillar_internal_links(pillar: dict) -> str:
     BASE_URL = "https://www.rentalops.ca/blog"
     links = pillar.get("internal_links", [])
     if not links:
         return ""
-    links_block = "\n".join(
-        f'- [{l["title"]}]({BASE_URL}/{l["slug"]})'
-        for l in links
-    )
+    links_block = "\n".join(f'- [{l["title"]}]({BASE_URL}/{l["slug"]})' for l in links)
     return f"""
 - This is a PILLAR post. Link to these related cluster posts naturally within the content:
 {links_block}
 - Also mention readers can explore the RentalOps blog for detailed guides on each sub-topic."""
 
-
-# ─────────────────────────────────────────────
-# CHECK IF PILLAR IS DUE TODAY
-# ─────────────────────────────────────────────
 def get_pending_pillar() -> dict | None:
     today = datetime.now().day
     published_pillars = get_published_pillars()
@@ -378,10 +350,6 @@ def get_pending_pillar() -> dict | None:
     print("✅ All pillar posts already published")
     return None
 
-
-# ─────────────────────────────────────────────
-# IMAGE QUERY GENERATOR
-# ─────────────────────────────────────────────
 def generate_image_query(title):
     topic_map = [
         (["eviction", "tribunal", "LTB", "RTB", "notice"], "tenant landlord dispute paperwork"),
@@ -420,10 +388,6 @@ def generate_image_query(title):
     print(f"🖼️  Image query (fallback): '{query}'")
     return query
 
-
-# ─────────────────────────────────────────────
-# UNSPLASH
-# ─────────────────────────────────────────────
 def get_unsplash_image(query):
     print(f"🖼️  Fetching image for: {query}")
     if not UNSPLASH_ACCESS_KEY:
@@ -444,30 +408,14 @@ def get_unsplash_image(query):
         data = response.json()
         image_url = data["urls"]["regular"]
         photographer = data["user"]["name"]
-        credit = (
-            f"Photo by [{photographer}]"
-            f"(https://unsplash.com/@{data['user']['username']}) "
-            f"on [Unsplash](https://unsplash.com)"
-        )
+        credit = f"Photo by [{photographer}](https://unsplash.com/@{data['user']['username']}) on [Unsplash](https://unsplash.com)"
         print(f"✅ Image found by {photographer}")
         return {"url": image_url, "credit": credit}
     except Exception as e:
         print(f"⚠️  Unsplash fetch failed: {e}")
         return None
 
-
-# ─────────────────────────────────────────────
-# GROQ API — shared helper
-# force_json_mode=True only for short calls
-# Content generation uses False to get full
-# token budget — we handle parsing manually
-# ─────────────────────────────────────────────
-def call_groq(
-    messages: list,
-    max_tokens: int = 6000,
-    temperature: float = 0.7,
-    force_json_mode: bool = False,
-) -> str | None:
+def call_groq(messages: list, max_tokens: int = 6000, temperature: float = 0.7, force_json_mode: bool = False) -> str | None:
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -483,30 +431,14 @@ def call_groq(
         payload["response_format"] = {"type": "json_object"}
 
     try:
-        response = requests.post(
-            url, headers=headers, json=payload, timeout=120
-        )
+        response = requests.post(url, headers=headers, json=payload, timeout=120)
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"❌ Groq API call failed: {e}")
         return None
 
-
-# ─────────────────────────────────────────────
-# JSON REPAIR
-# Fixes unescaped newlines/tabs inside JSON
-# string values — the main cause of parse
-# failures when not using JSON mode
-# ─────────────────────────────────────────────
 def repair_json(raw: str) -> str:
-    """
-    Walk the raw string character by character.
-    Inside a JSON string value, replace literal
-    newlines/tabs/carriage returns with their
-    escaped equivalents so json.loads() works.
-    """
-    # Find outermost braces
     start = raw.find('{')
     end = raw.rfind('}')
     if start == -1 or end == -1:
@@ -547,35 +479,19 @@ def repair_json(raw: str) -> str:
 
     return ''.join(result)
 
-
-# ─────────────────────────────────────────────
-# JSON EXTRACTOR
-# Strips markdown fences then uses repair_json
-# before attempting json.loads()
-# ─────────────────────────────────────────────
 def extract_json(raw: str) -> dict | None:
     if not raw:
         return None
-
-    # Strip markdown code fences
     cleaned = re.sub(r'^```(?:json)?\s*', '', raw.strip(), flags=re.MULTILINE)
-    cleaned = re.sub(r'\s*```$', '', cleaned.strip(), flags=re.MULTILINE)
-
-    # Repair unescaped control characters
+    cleaned = re.sub(r'\s*
+```$', '', cleaned.strip(), flags=re.MULTILINE)
     repaired = repair_json(cleaned)
-
-    # Try parsing repaired string
     try:
         return json.loads(repaired)
     except json.JSONDecodeError as e:
         print(f"❌ JSON parse failed after repair: {e}")
-        print(f"   First 300 chars of repaired: {repaired[:300]}")
         return None
 
-
-# ─────────────────────────────────────────────
-# DEV.TO DUPLICATE CHECK
-# ─────────────────────────────────────────────
 def devto_canonical_exists(canonical_url: str) -> bool:
     if not DEVTO_API_KEY:
         return False
@@ -596,40 +512,28 @@ def devto_canonical_exists(canonical_url: str) -> bool:
         print(f"⚠️  Could not check Dev.to for duplicates: {e}")
         return False
 
-
 # ─────────────────────────────────────────────
-# PILLAR POST GENERATION
+# REWRITTEN CONTENT MATRIX PLUGINS
 # ─────────────────────────────────────────────
 def generate_pillar_content(pillar: dict):
     print(f"📌 Generating PILLAR post: {pillar['cluster']}")
     print(f"   Topic: {pillar['topic']}")
 
     internal_links_instruction = get_pillar_internal_links(pillar)
-    cluster_posts_list = "\n".join(
-        f"  - {t}" for t in pillar["cluster_posts"]
-    )
+    cluster_posts_list = "\n".join(f"  - {t}" for t in pillar["cluster_posts"])
 
     messages = [
         {
             "role": "system",
-            "content": """You are a senior content strategist for RentalOps, a Canadian landlord
-expense tracking and tax preparation tool for small landlords with 1-5 properties.
+            "content": """You are a senior content strategist for RentalOps, a Canadian landlord expense tracking and tax preparation platform built specifically for small landlords (1-3 properties) who have a full-time day job.
 
-Audience: Canadian landlords who are NOT accountants. Regular people overwhelmed
-by CRA rules, T776 forms, and provincial regulations. Need plain-English guidance.
+Audience: "The Accidental Landlord" and "Small Investor". They are busy professionals, not accountants. They dread tax season and find CRA rules overwhelming. Write in plain, clear, jargon-free English using relatable comparisons.
 
-Write the definitive pillar guide — thorough enough that landlords bookmark and share it.
+Conversion Strategy: Your main goal is to drive readers to download our free spreadsheet tool located at https://www.rentalops.ca/free-landlord-t776-excel-template. Frame the spreadsheet as the perfect bridge to get organized, and mention RentalOps software trial as the ultimate hands-free automated upgrade.
 
-RentalOps mission: Educate landlords on their obligations, show how RentalOps makes
-compliance effortless — T776 filing, expense tracking, CRA-compliant records.
-
-OUTPUT FORMAT: You must output a single valid JSON object.
-The JSON must have these exact keys:
-  title, metaDescription, content, tags, persona, postType, cluster
-
-The content value must be a single string containing the full markdown article.
-All newlines inside the content string must be represented as \\n (escaped).
-Do not output any text outside the JSON object.""",
+OUTPUT FORMAT: You must output a single valid JSON object with these exact keys:
+title, metaDescription, content, tags, persona, postType, cluster
+The content value must be a single string containing the full markdown article with escaped newlines (\\n). Do not output text outside the JSON object.""",
         },
         {
             "role": "user",
@@ -642,23 +546,20 @@ Description: {pillar['description']}
 Sub-topics — write a full H2 section (400+ words) for each:
 {cluster_posts_list}
 
-Requirements:
-- PRIMARY KEYWORD: "{pillar['topic']}" — in title, first paragraph, 2+ H2 headings
-- title: Suggested title or close variant. Under 70 characters.
-- metaDescription: 150-160 characters EXACTLY. Primary keyword included. Ends with benefit.
-- content: Minimum 3000 words. Every section fully written. No summarising or skipping.
-  Each H2 section at least 400 words with H3 sub-sections.
-- Tone: Plain English. Reassuring. Explain every tax term on first use.
-- Include: Introduction with hook, 5-7 H2 sections, Quick Reference,
-  Common Mistakes (3+ mistakes), Key Takeaways (5-7 bullets), CTA conclusion
-- Real Canadian numbers: CRA deadlines, T776 line numbers, CAD amounts, penalties
-- Mention RentalOps 3-4 times naturally tied to specific pain points{internal_links_instruction}
-- tags: array of 5 specific SEO search terms used by Canadian landlords
+Strict SEO & Conversion Requirements:
+- PRIMARY KEYWORD: "{pillar['topic']}" — must appear in the title, the first paragraph, and at least 3 H2/H3 headings.
+- TARGET KEYWORDS TO WEAVE IN NATURALLY: "T776 form software Canada", "CRA rental expense tracker landlord", "rental bookkeeping software Canada", "what can landlords claim CRA".
+- metaDescription: 150-160 characters EXACTLY. Must include the primary keyword and end with a clear benefit.
+- Content Depth: Minimum 3000 words. Fully develop every single section. Do not summarize or use placeholders. 
+- Tone: Plain English. Explain complex tax rules using easy comparisons (e.g., explaining capital cost allowance vs. current repairs).
+- Contextual Canadian Data: Explicitly reference real CRA deadlines (April 30th), actual T776 form line numbers (e.g., Line 8710 for interest, Line 8960 for repairs), and real tax implications.
+- The Core Conversion Hook: In the introduction and again in the final conclusion section, pitch the "Free Canadian Landlord T776 Excel Template" available at https://www.rentalops.ca/free-landlord-t776-excel-template as the solution to stop the March tax scramble. Emphasize that it is pre-mapped directly to the CRA guidelines so they don't lose unclaimed deductions.{internal_links_instruction}
+- tags: array of 5 highly relevant Canadian landlord search terms.
 - persona: "Small Landlord"
 - postType: "pillar"
 - cluster: "{pillar['cluster']}"
 
-Output only the JSON object. No text before or after it.""",
+Output only the JSON object. No raw conversational text before or after it.""",
         },
     ]
 
@@ -679,20 +580,11 @@ Output only the JSON object. No text before or after it.""",
 
     word_count = len(blog_data["content"].split())
     print(f"✅ Pillar content generated")
-    print(f"   Title: {blog_data['title'][:70]}")
-    print(f"   Meta ({len(blog_data['metaDescription'])} chars): {blog_data['metaDescription']}")
     print(f"   Word count: ~{word_count} words")
-    print(f"   Tags: {', '.join(blog_data['tags'])}")
-
-    if word_count < 2000:
-        print(f"⚠️  WARNING: Pillar only {word_count} words — target is 3000+")
 
     return blog_data, pillar["topic"]
 
 
-# ─────────────────────────────────────────────
-# REGULAR BLOG POST GENERATION
-# ─────────────────────────────────────────────
 def generate_blog_content(topic: str, persona: dict):
     print(f"🎯 Target persona: {persona['name']}")
     print(f"🤖 Generating content about: {topic}")
@@ -707,74 +599,49 @@ def generate_blog_content(topic: str, persona: dict):
     pillar_link_instruction = ""
     published_pillars = get_published_pillars()
     for pillar in PILLAR_POSTS:
-        if (
-            pillar["cluster"] == current_cluster
-            and pillar["id"] in published_pillars
-        ):
+        if pillar["cluster"] == current_cluster and pillar["id"] in published_pillars:
             pillar_slug = generate_slug(pillar["title_hint"])
             pillar_link_instruction = f"""
-- This post is part of the "{pillar['cluster']}" cluster.
-  Link back to the pillar guide naturally once in the article:
-  [{pillar['title_hint']}](https://www.rentalops.ca/blog/{pillar_slug})"""
+- This post is part of the "{pillar['cluster']}" cluster. Link back to the pillar guide naturally once in the article: [{pillar['title_hint']}](https://www.rentalops.ca/blog/{pillar_slug})"""
             break
 
     include_roi = random.random() < 0.3
     roi_instruction = ""
     if include_roi:
         roi_instruction = """
-- Include a section: "What This Costs You Without the Right Tools"
-  Compare manual effort vs RentalOps. Specific time and money examples.
-  e.g. "2-3 hours/month tracking receipts manually vs $6.99/month for RentalOps"."""
-
-    print(f"💰 ROI/cost section: {'Yes' if include_roi else 'No'}")
+- Include a section: "What This Costs You Without the Right Tools" comparing manual spreadsheets vs RentalOps. e.g. "2-3 hours/month tracking receipts manually vs $6.99/month for RentalOps"."""
 
     internal_links_instruction = get_internal_links(topic, current_cluster)
 
     messages = [
         {
             "role": "system",
-            "content": f"""You are a content writer for RentalOps, a Canadian landlord expense
-tracking and tax preparation tool for small landlords with 1-5 properties.
+            "content": f"""You are an expert financial content writer for RentalOps, a Canadian rental income tracking tool optimized for busy accidental landlords who have a full-time day job.
 
-Audience: Regular Canadians with 1-5 rental properties. NOT accountants.
-Confused about CRA rules, worried about audits, want to do things right.
+Audience: {persona['name']} — {persona['description']}. They keep receipts in folder apps or shoeboxes, work full-time, and need simple compliance frameworks without confusing financial jargon.
 
-Tone: Plain English. Reassuring and practical. Real numbers, real Canadian context.
-RentalOps helps track income/expenses, file T776 accurately, stay CRA-compliant.
+Conversion Strategy: Do not force an immediate software sale. Instead, capture their interest by pushing them to our free, pre-mapped T776 spreadsheet tool at https://www.rentalops.ca/free-landlord-t776-excel-template. Introduce it as the free way to skip the spreadsheet-building headache.
 
-Persona: {persona['name']} — {persona['description']}
-
-OUTPUT FORMAT: You must output a single valid JSON object.
-The JSON must have these exact keys:
-  title, metaDescription, content, tags, persona, postType, cluster
-
-The content value must be a single string with the full markdown article.
-All newlines in the content string must be written as \\n (escaped newline).
-Do not output any text outside the JSON object.""",
+OUTPUT FORMAT: You must output a single valid JSON object with these exact keys:
+title, metaDescription, content, tags, persona, postType, cluster
+The content value must be a single string with the full markdown article using escaped newlines (\\n). Do not output text outside the JSON object.""",
         },
         {
             "role": "user",
-            "content": f"""Write a complete blog post about: {topic}
-
-The reader is a Canadian landlord with 1-5 properties — NOT an accountant —
-confused or worried about this topic. Start from their perspective.
+            "content": f"""Write a highly thorough, educational blog post about: {topic}
 
 Requirements:
-- PRIMARY KEYWORD: "{topic}" — in title, first paragraph, at least 2 H2 headings
-- title: Natural, keyword-first. Under 65 characters if possible.
-- metaDescription: 150-160 characters EXACTLY. Primary keyword included.
-- content: Write a THOROUGH article. Fully develop every section.
-  Do not stop after a brief overview. Write until the topic is completely covered.
-  Minimum structure: Introduction + 4-6 full H2 sections + Mistakes + Takeaways + CTA.
-  Each H2 section at least 200 words with real Canadian examples.
-- Tone: Plain English. Explain every tax term on first use.
-- Include: CRA deadlines, T776 line numbers, CAD dollar examples,
-  provincial rule references, specific penalty amounts
-- "Common Mistakes" section: at least 3 specific mistakes small landlords make
-- "Key Takeaways": up to 5 bullet points, plain English
-- Conclusion: strong CTA to try RentalOps free{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
-- Mention RentalOps 2-3 times naturally tied to specific pain points
-- tags: array of 5 real Canadian landlord search terms
+- PRIMARY KEYWORD: "{topic}" — must appear in the title, the first paragraph, and at least two H2 headings.
+- metaDescription: 150-160 characters EXACTLY containing the primary keyword.
+- Structural Depth: Minimum 1200 words. Do not write a quick overview. Fully break down the rules, regulations, and exact line-item definitions under the CRA framework.
+- Core Sections to Include: 
+  1. An empathetic introduction acknowledging how hard it is to track this while holding down a day job.
+  2. 4-6 detailed body sections with practical financial examples using Canadian dollar amounts.
+  3. A "Common Mistakes Small Landlords Make" section listing at least 3 specific errors (e.g., missing structural depreciation or misclassifying line items).
+  4. A "Key Takeaways" summary list.
+- Exact CRA Alignment: Use explicit CRA tax line references (such as Line 8520 for Advertising, Line 8710 for Interest, Line 8960 for Maintenance) to show absolute authority.
+- Actionable Lead Magnet Call-To-Action: Conclude with an undeniable push to download the Free T776 Landlord Excel Template at https://www.rentalops.ca/free-landlord-t776-excel-template. Explain that it sets up their record-keeping perfectly for their accountant. Position RentalOps automatic tracking software as the next seamless step to eliminate data entry entirely.{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
+- tags: array of 5 real Canadian landlord search terms.
 - persona: "{persona['name']}"
 - postType: "cluster"
 - cluster: "{current_cluster or 'General'}"
@@ -799,37 +666,21 @@ Output only the JSON object. No text before or after it.""",
     blog_data["cluster"] = current_cluster or "General"
 
     word_count = len(blog_data["content"].split())
-    print(f"✅ Content generated")
-    print(f"   Cluster: {blog_data.get('cluster', 'General')}")
-    print(f"   Title: {blog_data['title'][:70]}")
-    print(
-        f"   Meta ({len(blog_data['metaDescription'])} chars): "
-        f"{blog_data['metaDescription']}"
-    )
-    print(f"   Tags: {', '.join(blog_data['tags'])}")
-    print(f"   Word count: ~{word_count} words")
+    print(f"✅ Content generated. Word count: ~{word_count} words")
 
     if word_count < 600:
-        print(f"⚠️  Word count critically low ({word_count}) — skipping")
         return None
-
-    if word_count < 1000:
-        print(f"⚠️  Word count below target ({word_count} words) — publishing anyway")
-
     return blog_data
 
-
 # ─────────────────────────────────────────────
-# PUBLISH TO DEV.TO
+# CORE DISTRIBUTION CHANNEL PUBLISHING
 # ─────────────────────────────────────────────
 def publish_to_devto(blog_data, image_data, slug):
     print("📤 Publishing to Dev.to...")
-
     canonical_url = f"https://www.rentalops.ca/blog/{slug}"
 
     if devto_canonical_exists(canonical_url):
-        print(f"⚠️  Dev.to already has post with canonical: {canonical_url}")
-        print(f"   Skipping Dev.to — already exists")
+        print(f"⚠️  Skipping Dev.to — already exists")
         return False, None
 
     content = blog_data["content"]
@@ -854,262 +705,85 @@ def publish_to_devto(blog_data, image_data, slug):
     }
 
     try:
-        response = requests.post(
-            "https://dev.to/api/articles",
-            headers={
-                "api-key": DEVTO_API_KEY,
-                "Content-Type": "application/json",
-            },
-            json=article_payload,
-            timeout=30,
-        )
-
-        if response.status_code not in [200, 201]:
-            print(f"❌ Dev.to returned status {response.status_code}")
-            print(f"❌ Dev.to response: {response.text}")
-
+        response = requests.post("https://dev.to/api/articles", headers={"api-key": DEVTO_API_KEY, "Content-Type": "application/json"}, json=article_payload, timeout=30)
         response.raise_for_status()
         result = response.json()
-        post_url = result.get("url", "https://dev.to")
-        print(f"✅ Dev.to post published!")
-        print(f"🔗 Dev.to URL: {post_url}")
-        print(f"🏠 Canonical: {canonical_url}")
-        return True, post_url
-
+        print(f"✅ Dev.to post published! URL: {result.get('url')}")
+        return True, result.get("url")
     except Exception as e:
         print(f"❌ Error publishing to Dev.to: {e}")
         return False, None
 
-
-# ─────────────────────────────────────────────
-# LINKEDIN
-# ─────────────────────────────────────────────
 def generate_linkedin_post(blog_data, blog_url):
     print("🔗 Generating LinkedIn post...")
-
     post_type = blog_data.get("postType", "cluster")
     cluster = blog_data.get("cluster", "")
-
-    if post_type == "pillar":
-        type_instruction = (
-            "This is a COMPREHENSIVE GUIDE. "
-            "Hook should convey it is the definitive resource on this topic."
-        )
-    else:
-        type_instruction = (
-            "This is a focused practical guide. "
-            "Hook should speak directly to the specific pain point."
-        )
+    type_instruction = "This is a COMPREHENSIVE GUIDE. Hook should convey it is the definitive resource." if post_type == "pillar" else "Focused practical guide. Hook should speak directly to the specific line-item pain point."
 
     messages = [
         {
             "role": "system",
-            "content": """You are a LinkedIn content writer for RentalOps, a Canadian landlord
-tax and expense tracking tool for small landlords with 1-5 properties.
-Write posts that feel human — like a landlord sharing something useful with others.
-Not corporate. Not salesy.
-Respond with a JSON object: {"post": "full linkedin post text including hashtags"}""",
+            "content": """You are a LinkedIn content writer for RentalOps, a Canadian landlord tax tool. Write human-to-human posts that feel like a property owner sharing value, not corporate sales jargon. Respond with JSON: {"post": "text"}""",
         },
         {
             "role": "user",
-            "content": f"""Write a LinkedIn post for this blog article.
-
-Title: {blog_data['title']}
-Summary: {blog_data['metaDescription']}
-Persona: {blog_data.get('persona', 'Canadian landlord')}
-Cluster: {cluster}
-URL: {blog_url}
-Type: {type_instruction}
-
-Rules:
-- 150-200 words maximum
-- First line is the hook — impossible to scroll past
-- Human voice — landlord sharing with landlords, not marketing
-- Specific Canadian context (CRA, T776, Ontario LTB, etc.)
-- One clear CTA linking to the article
-- 4-5 relevant hashtags on last line
-- Zero buzzwords
-
-Return only this JSON: {{"post": "full post text with hashtags"}}""",
+            "content": f"""Write a LinkedIn post. Title: {blog_data['title']}. Summary: {blog_data['metaDescription']}. URL: {blog_url}. Type: {type_instruction}. Max 200 words. Force an unscrollable first-line hook, reference real CRA/T776 pain points, and output exact JSON formatting.""",
         },
     ]
-
     raw = call_groq(messages, max_tokens=500, temperature=0.8, force_json_mode=True)
-    if not raw:
-        return None
+    if not raw: return None
     try:
-        post_data = json.loads(raw)
-        linkedin_text = post_data.get("post", "")
-        print(f"✅ LinkedIn post generated ({len(linkedin_text)} chars)")
-        return linkedin_text
-    except Exception as e:
-        print(f"⚠️  LinkedIn generation failed: {e}")
-        return None
-
+        return json.loads(raw).get("post", "")
+    except Exception: return None
 
 def upload_image_to_linkedin(access_token, image_url, org_id):
     print("🖼️  Uploading image to LinkedIn...")
     try:
         image_response = requests.get(image_url, timeout=15)
         image_response.raise_for_status()
-        image_bytes = image_response.content
-
-        headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-            "X-Restli-Protocol-Version": "2.0.0",
-        }
-
-        register_payload = {
-            "registerUploadRequest": {
-                "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
-                "owner": f"urn:li:organization:{org_id}",
-                "serviceRelationships": [
-                    {
-                        "relationshipType": "OWNER",
-                        "identifier": "urn:li:userGeneratedContent",
-                    }
-                ],
-            }
-        }
-
-        register_response = requests.post(
-            "https://api.linkedin.com/v2/assets?action=registerUpload",
-            headers=headers,
-            json=register_payload,
-            timeout=15,
-        )
+        headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json", "X-Restli-Protocol-Version": "2.0.0"}
+        register_payload = {"registerUploadRequest": {"recipes": ["urn:li:digitalmediaRecipe:feedshare-image"], "owner": f"urn:li:organization:{org_id}", "serviceRelationships": [{"relationshipType": "OWNER", "identifier": "urn:li:userGeneratedContent"}]}}
+        register_response = requests.post("https://api.linkedin.com/v2/assets?action=registerUpload", headers=headers, json=register_payload, timeout=15)
         register_response.raise_for_status()
         register_data = register_response.json()
-
-        upload_url = register_data["value"]["uploadMechanism"][
-            "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
-        ]["uploadUrl"]
+        upload_url = register_data["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
         asset_urn = register_data["value"]["asset"]
-
-        requests.put(
-            upload_url,
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/octet-stream",
-            },
-            data=image_bytes,
-            timeout=30,
-        ).raise_for_status()
-
-        print(f"✅ Image uploaded — asset: {asset_urn}")
+        requests.put(upload_url, headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/octet-stream"}, data=image_response.content, timeout=30).raise_for_status()
         return asset_urn
-
     except Exception as e:
-        print(f"⚠️  Image upload failed — posting without image: {e}")
+        print(f"⚠️  Image upload failed: {e}")
         return None
-
 
 def post_to_linkedin(post_text, image_url=None):
     print("📤 Posting to LinkedIn...")
-
     access_token = os.environ.get("LINKEDIN_ACCESS_TOKEN")
     org_id = os.environ.get("LINKEDIN_ORGANIZATION_ID")
+    if not access_token or not org_id: return False
 
-    if not access_token:
-        print("⚠️  LINKEDIN_ACCESS_TOKEN not set — skipping")
-        return False
-    if not org_id:
-        print("⚠️  LINKEDIN_ORGANIZATION_ID not set — skipping")
-        return False
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json", "X-Restli-Protocol-Version": "2.0.0", "LinkedIn-Version": "202501"}
+    image_urn = upload_image_to_linkedin(access_token, image_url, org_id.strip())
+    author_urn = f"urn:li:organization:{org_id.strip()}"
 
-    org_id_clean = org_id.strip()
-    if not org_id_clean.isdigit():
-        print(f"❌ LINKEDIN_ORGANIZATION_ID must be a plain number — skipping")
-        print(f"   Find it in: linkedin.com/company/[number]/admin/")
-        return False
-
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json",
-        "X-Restli-Protocol-Version": "2.0.0",
-        "LinkedIn-Version": "202501",
+    post_payload = {
+        "author": author_urn,
+        "lifecycleState": "PUBLISHED",
+        "specificContent": {
+            "com.linkedin.ugc.ShareContent": {
+                "shareCommentary": {"text": post_text},
+                "shareMediaCategory": "IMAGE" if image_urn else "NONE",
+                **({"media": [{"status": "READY", "media": image_urn, "mediaType": "urn:li:digitalmediaMediaType:image"}]} if image_urn else {})
+            }
+        },
+        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
     }
-
     try:
-        profile_response = requests.get(
-            "https://api.linkedin.com/v2/userinfo",
-            headers=headers,
-            timeout=10,
-        )
-        profile_response.raise_for_status()
-        member_id = profile_response.json().get("sub")
-        if not member_id:
-            print("❌ Could not retrieve LinkedIn member ID")
-            return False
-        print("👤 LinkedIn member ID found")
-    except Exception as e:
-        print(f"❌ Failed to get LinkedIn profile: {e}")
-        return False
-
-    image_urn = None
-    if image_url:
-        image_urn = upload_image_to_linkedin(access_token, image_url, org_id_clean)
-
-    author_urn = f"urn:li:organization:{org_id_clean}"
-
-    if image_urn:
-        post_payload = {
-            "author": author_urn,
-            "lifecycleState": "PUBLISHED",
-            "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": post_text},
-                    "shareMediaCategory": "IMAGE",
-                    "media": [
-                        {
-                            "status": "READY",
-                            "media": image_urn,
-                            "mediaType": "urn:li:digitalmediaMediaType:image",
-                        }
-                    ],
-                }
-            },
-            "visibility": {
-                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
-            },
-        }
-    else:
-        post_payload = {
-            "author": author_urn,
-            "lifecycleState": "PUBLISHED",
-            "specificContent": {
-                "com.linkedin.ugc.ShareContent": {
-                    "shareCommentary": {"text": post_text},
-                    "shareMediaCategory": "NONE",
-                }
-            },
-            "visibility": {
-                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
-            },
-        }
-
-    try:
-        post_response = requests.post(
-            "https://api.linkedin.com/v2/ugcPosts",
-            headers=headers,
-            json=post_payload,
-            timeout=15,
-        )
-        if post_response.status_code not in [200, 201]:
-            print(f"❌ LinkedIn post failed: {post_response.status_code}")
-            print(f"❌ Response: {post_response.text}")
-            return False
+        requests.post("https://api.linkedin.com/v2/ugcPosts", headers=headers, json=post_payload, timeout=15).raise_for_status()
         print("✅ Posted to LinkedIn successfully!")
         return True
     except Exception as e:
         print(f"❌ LinkedIn post failed: {e}")
         return False
 
-
-# ─────────────────────────────────────────────
-# SAVE POST TO REPO
-# ─────────────────────────────────────────────
 def save_post_to_repo(blog_data, image_data, post_slug):
     try:
         os.makedirs("posts", exist_ok=True)
@@ -1135,14 +809,8 @@ def save_post_to_repo(blog_data, image_data, post_slug):
         print(f"⚠️  Could not save post: {e}")
         return None
 
-
-# ─────────────────────────────────────────────
-# LOG NEW POST FOR INDEX
-# ─────────────────────────────────────────────
 def log_new_post_for_index(title: str, slug: str, topic: str, cluster: str):
-    print("\n" + "─" * 60)
-    print("📌 ADD THIS TO PUBLISHED_POSTS in blog_poster.py:")
-    print("─" * 60)
+    print("\n" + "─" * 60 + "\n📌 ADD THIS TO PUBLISHED_POSTS in blog_poster.py:\n" + "─" * 60)
     print(f"""    {{
         "slug": "{slug}",
         "title": "{title}",
@@ -1151,86 +819,43 @@ def log_new_post_for_index(title: str, slug: str, topic: str, cluster: str):
     }},""")
     print("─" * 60 + "\n")
 
-
-# ─────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────
 def main():
-    print("=" * 60)
-    print("🚀 RentalOps Blog Automation Starting...")
-    print("=" * 60)
-
+    print("=" * 60 + "\n🚀 RentalOps Blog Automation Starting...\n" + "=" * 60)
     is_pillar = False
     blog_data = None
     topic = None
     persona = get_current_persona()
     used_topics = get_used_topics()
-
     pending_pillar = get_pending_pillar()
 
     if pending_pillar:
-        print(f"\n📌 PILLAR POST MODE — {pending_pillar['cluster']}")
         blog_data, topic = generate_pillar_content(pending_pillar)
         is_pillar = True
     else:
-        print(f"\n📝 REGULAR POST MODE")
         for attempt in range(3):
             topic = pick_topic(persona, used_topics, offset=attempt)
-            print(f"\n   Attempt {attempt + 1}/3 — topic: {topic}")
             blog_data = generate_blog_content(topic, persona)
-            if blog_data:
-                break
-            if attempt < 2:
-                print(f"   Failed — trying next topic in 10 seconds...")
-                time.sleep(10)
+            if blog_data: break
+            if attempt < 2: time.sleep(10)
 
     if not blog_data or not topic:
-        print("❌ Failed to generate content after all attempts. Exiting.")
-        print("\n" + "=" * 60)
-        print("❌ Blog post automation failed.")
-        print("=" * 60)
         return
 
     slug = generate_slug(blog_data["title"])
-    print(f"🔗 Slug: {slug}")
-
-    image_search_query = generate_image_query(blog_data["title"])
-    image_data = get_unsplash_image(image_search_query)
-
+    image_data = get_unsplash_image(generate_image_query(blog_data["title"]))
     saved_file = save_post_to_repo(blog_data, image_data, slug)
-    success, post_url = publish_to_devto(blog_data, image_data, slug)
+    success, _ = publish_to_devto(blog_data, image_data, slug)
 
     if saved_file or success:
         save_used_topic(topic)
-
         if is_pillar and pending_pillar:
             save_published_pillar(pending_pillar["id"])
 
         blog_url = f"https://www.rentalops.ca/blog/{slug}"
-        cluster = blog_data.get("cluster", "General")
-
-        log_new_post_for_index(blog_data["title"], slug, topic, cluster)
-
+        log_new_post_for_index(blog_data["title"], slug, topic, blog_data.get("cluster", "General"))
         linkedin_text = generate_linkedin_post(blog_data, blog_url)
         if linkedin_text:
-            post_to_linkedin(
-                linkedin_text,
-                image_data["url"] if image_data else None,
-            )
-
-        print("\n" + "=" * 60)
-        post_type_label = "PILLAR" if is_pillar else "CLUSTER"
-        print(f"✅ [{post_type_label}] Blog post automation completed!")
-        print(f"🔗 Will be live at: {blog_url}")
-        print(f"🗂️  Cluster: {cluster}")
-        print(f"🗺️  Vercel redeploy triggered by GitHub Actions after commit")
-        print("=" * 60)
-
-    else:
-        print("\n" + "=" * 60)
-        print("❌ Blog post automation failed.")
-        print("=" * 60)
-
+            post_to_linkedin(linkedin_text, image_data["url"] if image_data else None)
 
 if __name__ == "__main__":
     main()
