@@ -44,3 +44,14 @@ jobs:
           git add published_pillars.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "Add new blog post and update topics log"
           git push
+          
+      - name: Push JSON to Main Website
+              run: |
+                git config --global user.name "GitHub Action"
+                git config --global user.email "action@github.com"
+                git clone https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/rishinair-code/rental-management-app sync_repo
+                cp posts/*.json sync_repo/posts/
+                cd sync_repo
+                git add .
+                git commit -m "Add new blog post from automation"
+                git push
