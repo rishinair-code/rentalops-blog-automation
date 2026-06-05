@@ -482,9 +482,10 @@ def repair_json(raw: str) -> str:
 def extract_json(raw: str) -> dict | None:
     if not raw:
         return None
-    cleaned = re.sub(r'^```(?:json)?\s*', '', raw.strip(), flags=re.MULTILINE)
-    cleaned = re.sub(r'\s*
-```$', '', cleaned.strip(), flags=re.MULTILINE)
+    # Safely building the markdown fence strings to prevent premature parser exit
+    ticks = "```"
+    cleaned = re.sub(r'^' + ticks + r'(?:json)?\s*', '', raw.strip(), flags=re.MULTILINE)
+    cleaned = re.sub(r'\s*' + ticks + r'$', '', cleaned.strip(), flags=re.MULTILINE)
     repaired = repair_json(cleaned)
     try:
         return json.loads(repaired)
@@ -497,7 +498,7 @@ def devto_canonical_exists(canonical_url: str) -> bool:
         return False
     try:
         response = requests.get(
-            "https://dev.to/api/articles/me/published",
+            "[https://dev.to/api/articles/me/published](https://dev.to/api/articles/me/published)",
             headers={"api-key": DEVTO_API_KEY},
             params={"per_page": 100},
             timeout=15,
@@ -529,7 +530,7 @@ def generate_pillar_content(pillar: dict):
 
 Audience: "The Accidental Landlord" and "Small Investor". They are busy professionals, not accountants. They dread tax season and find CRA rules overwhelming. Write in plain, clear, jargon-free English using relatable comparisons.
 
-Conversion Strategy: Your main goal is to drive readers to download our free spreadsheet tool located at https://www.rentalops.ca/free-landlord-t776-excel-template. Frame the spreadsheet as the perfect bridge to get organized, and mention RentalOps software trial as the ultimate hands-free automated upgrade.
+Conversion Strategy: Your main goal is to drive readers to download our free spreadsheet tool located at [https://www.rentalops.ca/free-landlord-t776-excel-template](https://www.rentalops.ca/free-landlord-t776-excel-template). Frame the spreadsheet as the perfect bridge to get organized, and mention RentalOps software trial as the ultimate hands-free automated upgrade.
 
 OUTPUT FORMAT: You must output a single valid JSON object with these exact keys:
 title, metaDescription, content, tags, persona, postType, cluster
@@ -553,7 +554,7 @@ Strict SEO & Conversion Requirements:
 - Content Depth: Minimum 3000 words. Fully develop every single section. Do not summarize or use placeholders. 
 - Tone: Plain English. Explain complex tax rules using easy comparisons (e.g., explaining capital cost allowance vs. current repairs).
 - Contextual Canadian Data: Explicitly reference real CRA deadlines (April 30th), actual T776 form line numbers (e.g., Line 8710 for interest, Line 8960 for repairs), and real tax implications.
-- The Core Conversion Hook: In the introduction and again in the final conclusion section, pitch the "Free Canadian Landlord T776 Excel Template" available at https://www.rentalops.ca/free-landlord-t776-excel-template as the solution to stop the March tax scramble. Emphasize that it is pre-mapped directly to the CRA guidelines so they don't lose unclaimed deductions.{internal_links_instruction}
+- The Core Conversion Hook: In the introduction and again in the final conclusion section, pitch the "Free Canadian Landlord T776 Excel Template" available at [https://www.rentalops.ca/free-landlord-t776-excel-template](https://www.rentalops.ca/free-landlord-t776-excel-template) as the solution to stop the March tax scramble. Emphasize that it is pre-mapped directly to the CRA guidelines so they don't lose unclaimed deductions.{internal_links_instruction}
 - tags: array of 5 highly relevant Canadian landlord search terms.
 - persona: "Small Landlord"
 - postType: "pillar"
@@ -620,7 +621,7 @@ def generate_blog_content(topic: str, persona: dict):
 
 Audience: {persona['name']} — {persona['description']}. They keep receipts in folder apps or shoeboxes, work full-time, and need simple compliance frameworks without confusing financial jargon.
 
-Conversion Strategy: Do not force an immediate software sale. Instead, capture their interest by pushing them to our free, pre-mapped T776 spreadsheet tool at https://www.rentalops.ca/free-landlord-t776-excel-template. Introduce it as the free way to skip the spreadsheet-building headache.
+Conversion Strategy: Do not force an immediate software sale. Instead, capture their interest by pushing them to our free, pre-mapped T776 spreadsheet tool at [https://www.rentalops.ca/free-landlord-t776-excel-template](https://www.rentalops.ca/free-landlord-t776-excel-template). Introduce it as the free way to skip the spreadsheet-building headache.
 
 OUTPUT FORMAT: You must output a single valid JSON object with these exact keys:
 title, metaDescription, content, tags, persona, postType, cluster
@@ -640,7 +641,7 @@ Requirements:
   3. A "Common Mistakes Small Landlords Make" section listing at least 3 specific errors (e.g., missing structural depreciation or misclassifying line items).
   4. A "Key Takeaways" summary list.
 - Exact CRA Alignment: Use explicit CRA tax line references (such as Line 8520 for Advertising, Line 8710 for Interest, Line 8960 for Maintenance) to show absolute authority.
-- Actionable Lead Magnet Call-To-Action: Conclude with an undeniable push to download the Free T776 Landlord Excel Template at https://www.rentalops.ca/free-landlord-t776-excel-template. Explain that it sets up their record-keeping perfectly for their accountant. Position RentalOps automatic tracking software as the next seamless step to eliminate data entry entirely.{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
+- Actionable Lead Magnet Call-To-Action: Conclude with an undeniable push to download the Free T776 Landlord Excel Template at [https://www.rentalops.ca/free-landlord-t776-excel-template](https://www.rentalops.ca/free-landlord-t776-excel-template). Explain that it sets up their record-keeping perfectly for their accountant. Position RentalOps automatic tracking software as the next seamless step to eliminate data entry entirely.{roi_instruction}{pillar_link_instruction}{internal_links_instruction}
 - tags: array of 5 real Canadian landlord search terms.
 - persona: "{persona['name']}"
 - postType: "cluster"
@@ -677,7 +678,7 @@ Output only the JSON object. No text before or after it.""",
 # ─────────────────────────────────────────────
 def publish_to_devto(blog_data, image_data, slug):
     print("📤 Publishing to Dev.to...")
-    canonical_url = f"https://www.rentalops.ca/blog/{slug}"
+    canonical_url = f"[https://www.rentalops.ca/blog/](https://www.rentalops.ca/blog/){slug}"
 
     if devto_canonical_exists(canonical_url):
         print(f"⚠️  Skipping Dev.to — already exists")
@@ -705,7 +706,7 @@ def publish_to_devto(blog_data, image_data, slug):
     }
 
     try:
-        response = requests.post("https://dev.to/api/articles", headers={"api-key": DEVTO_API_KEY, "Content-Type": "application/json"}, json=article_payload, timeout=30)
+        response = requests.post("[https://dev.to/api/articles](https://dev.to/api/articles)", headers={"api-key": DEVTO_API_KEY, "Content-Type": "application/json"}, json=article_payload, timeout=30)
         response.raise_for_status()
         result = response.json()
         print(f"✅ Dev.to post published! URL: {result.get('url')}")
@@ -743,7 +744,7 @@ def upload_image_to_linkedin(access_token, image_url, org_id):
         image_response.raise_for_status()
         headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json", "X-Restli-Protocol-Version": "2.0.0"}
         register_payload = {"registerUploadRequest": {"recipes": ["urn:li:digitalmediaRecipe:feedshare-image"], "owner": f"urn:li:organization:{org_id}", "serviceRelationships": [{"relationshipType": "OWNER", "identifier": "urn:li:userGeneratedContent"}]}}
-        register_response = requests.post("https://api.linkedin.com/v2/assets?action=registerUpload", headers=headers, json=register_payload, timeout=15)
+        register_response = requests.post("[https://api.linkedin.com/v2/assets?action=registerUpload](https://api.linkedin.com/v2/assets?action=registerUpload)", headers=headers, json=register_payload, timeout=15)
         register_response.raise_for_status()
         register_data = register_response.json()
         upload_url = register_data["value"]["uploadMechanism"]["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]["uploadUrl"]
@@ -777,7 +778,7 @@ def post_to_linkedin(post_text, image_url=None):
         "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
     }
     try:
-        requests.post("https://api.linkedin.com/v2/ugcPosts", headers=headers, json=post_payload, timeout=15).raise_for_status()
+        requests.post("[https://api.linkedin.com/v2/ugcPosts](https://api.linkedin.com/v2/ugcPosts)", headers=headers, json=post_payload, timeout=15).raise_for_status()
         print("✅ Posted to LinkedIn successfully!")
         return True
     except Exception as e:
@@ -851,7 +852,7 @@ def main():
         if is_pillar and pending_pillar:
             save_published_pillar(pending_pillar["id"])
 
-        blog_url = f"https://www.rentalops.ca/blog/{slug}"
+        blog_url = f"[https://www.rentalops.ca/blog/](https://www.rentalops.ca/blog/){slug}"
         log_new_post_for_index(blog_data["title"], slug, topic, blog_data.get("cluster", "General"))
         linkedin_text = generate_linkedin_post(blog_data, blog_url)
         if linkedin_text:
