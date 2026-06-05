@@ -94,7 +94,7 @@ PERSONAS = [
 ]
 
 # ─────────────────────────────────────────────
-# PILLAR POSTS (ALIGNED TO YOUR REVENUE PIPELINE)
+# PILLAR POSTS 
 # ─────────────────────────────────────────────
 PILLAR_POSTS = [
     {
@@ -283,11 +283,16 @@ def save_used_topic(topic):
 
 def generate_slug(title: str) -> str:
     slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
-    if len(slug) > 70:
-        slug = slug[:70]
+    
+    # Increase length to 100 to support long-tail keywords
+    if len(slug) > 100:
+        slug = slug[:100]
         last_hyphen = slug.rfind('-')
-        if last_hyphen > 40:
+        if last_hyphen > 50:
             slug = slug[:last_hyphen]
+            
+    # Clean up dangling stop words at the end of the URL
+    slug = re.sub(r'-(for|and|the|a|in|to|of|on)$', '', slug)
     return slug
 
 def get_current_persona():
