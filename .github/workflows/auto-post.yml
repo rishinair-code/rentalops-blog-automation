@@ -46,12 +46,23 @@ jobs:
           git push
           
       - name: Push JSON to Main Website
-              run: |
-                git config --global user.name "GitHub Action"
-                git config --global user.email "action@github.com"
-                git clone https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/rishinair-code/rental-management-app sync_repo
-                cp posts/*.json sync_repo/posts/
-                cd sync_repo
-                git add .
-                git commit -m "Add new blog post from automation"
-                git push
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          
+          # Clone the main website repo
+          git clone https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/rishinair-code/rental-management-app.git sync_repo
+          
+          # Copy only the new JSON files to the main repo
+          cp posts/*.json sync_repo/posts/
+          
+          cd sync_repo
+          
+          # Check for changes, commit, and push
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .
+            git commit -m "Add new blog post from automation"
+            git push
+          else
+            echo "No new posts to sync."
+          fi
