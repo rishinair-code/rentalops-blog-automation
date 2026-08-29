@@ -6,6 +6,13 @@ import re
 import time
 from datetime import datetime
 
+# GSC-driven topic selection (falls back gracefully when cache/API unavailable)
+try:
+    from gsc_topic_selector import pick_topic_gsc_driven, load_gsc_cache
+except ImportError:
+    pick_topic_gsc_driven = None
+    load_gsc_cache = lambda: {"queries": []}
+
 # API Keys from GitHub Secrets
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
 DEVTO_API_KEY = os.environ.get('DEVTO_API_KEY')
@@ -838,8 +845,16 @@ def main():
         blog_data, topic = generate_pillar_content(pending_pillar)
         is_pillar = True
     else:
+        gsc_queries = load_gsc_cache().get("queries", []) if load_gsc_cache else []
+
         for attempt in range(3):
-            topic = pick_topic(persona, used_topics, offset=attempt)
+            if pick_topic_gsc_driven and gsc_queries:
+                topic = pick_topic_gsc_driven(
+                    persona, used_topics,
+                    fallback_fn=lambda p, u: pick_topic(p, u, offset=attempt)
+                )
+            else:
+                topic = pick_topic(persona, used_topics, offset=attempt)
             blog_data = generate_blog_content(topic, persona)
             if blog_data: break
             if attempt < 2: time.sleep(10)
