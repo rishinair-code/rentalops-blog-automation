@@ -173,7 +173,6 @@ def call_gemini_api(prompt_text):
     if not api_key:
         raise ValueError("CRITICAL: Missing Gemini API configuration key inside runner shell environment.")
 
-    # Fix: Route directly through standard v1 instead of broken v1beta endpoint for 2.0-flash
     url = f"https://googleapis.com{api_key}"
     
     headers = {'Content-Type': 'application/json'}
@@ -194,7 +193,7 @@ def call_gemini_api(prompt_text):
             
         response.raise_for_status()
         response_data = response.json()
-        return response_data['candidates']['content']['parts'][0]['text']
+        return response_data['candidates']['content']['parts']['text']
 
     except Exception as e:
         print(f"❌ Gemini API call failed: {e}")
@@ -205,43 +204,47 @@ def call_gemini_api(prompt_text):
 # ─────────────────────────────────────────────────────────────
 
 def main():
+    print("============================================================")
+    print("🚀 RentalOps Blog Automation Starting...")
 
 Use code with caution.
 print("============================================================")
-print("🚀 RentalOps Blog Automation Starting...")
-print("============================================================")
-# Load previously compiled content records
 used_topics = []
 if os.path.exists("used_topics.json"):
 with open("used_topics.json", "r") as f:
 used_topics = json.load(f)
 print(f"📋 Found {len(used_topics)} previously used topics")
-# Step 1: Check updates on GSC to shift strategy
+# Step 1: Check updates on GSC to shift strategy dynamically
 target_topic = None
 target_persona = "Accidental Landlord"
 cluster_group = "General"
 if pick_topic_gsc_driven:
 print("🔍 Auditing Google Search Console performance data...")
+try:
+# Invoking your imported selection algorithm to isolate search metrics
 gsc_data = pick_topic_gsc_driven(used_topics)
 if gsc_data and 'query' in gsc_data:
 target_topic = gsc_data['query']
 print(f"🎯 GSC Gap Identified: {target_topic} (impr: {gsc_data.get('impressions')}, pos: {gsc_data.get('position')})")
-# Match intent profile based on keyword content
-if "t776" in target_topic.lower() or "expense" in target_topic.lower():
+# Match strategy shifts based on incoming keyword content flags
+if "t776" in target_topic.lower() or "expense" in target_topic.lower() or "tracker" in target_topic.lower():
 target_persona = "Accidental Landlord"
 cluster_group = "CRA Tax & Reporting"
-# Fallback to predefined personas array if GSC doesn't yield a fresh target keyword
+elif "ontario" in target_topic.lower() or "board" in target_topic.lower():
+target_persona = "First-Time Landlord"
+cluster_group = "Ontario Landlord Rules"
+except Exception as e:
+print(f"⚠️ GSC data processing encountered an error: {e}. Cascading to predefined layout...")
+# Fallback structure if GSC doesn't return a target keyword phrase
 if not target_topic:
 print("⚠️ No unique GSC data found. Selecting from predefined strategy matrix...")
-available_personas = [p for p in PERSONAS]
-chosen_persona = random.choice(available_personas)
+chosen_persona = random.choice(PERSONAS)
 target_persona = chosen_persona["name"]
-# Pull a keyword that hasn't been written yet
-un-used = [t for t in chosen_persona["topics"] if t not in used_topics]
-target_topic = un-used[0] if un-used else random.choice(chosen_persona["topics"])
-print(f"👤 Target Persona: {target_persona}")
-print(f"🤖 Generating optimized content around keyword target: '{target_topic}'")
-print(f"🗂️ Strategic Content Cluster: {cluster_group}")
+unused_topics = [t for t in chosen_persona["topics"] if t not in used_topics]
+target_topic = unused_topics if unused_topics else random.choice(chosen_persona["topics"])
+print(f"👤 Target Persona Match: {target_persona}")
+print(f"🤖 Generating optimized content around target keyword: '{target_topic}'")
+print(f"🗂️ Strategic Content Cluster Assignment: {cluster_group}")
 # Step 2: Build Context Prompt and Write the Article
 prompt = f"""
 You are an expert Canadian tax accountant and property management advisor writing for rentalops.ca.
@@ -252,9 +255,8 @@ Structure requirements:
 3. Keep a professional, authoritative, yet friendly peer-to-peer tone. Do not use generic fluffy filler language.
 """
 blog_text = call_gemini_api(prompt)
-# Create valid slug format
+# Create valid url path token
 slug = re.sub(r'[^a-z0-9]+', '-', target_topic.lower()).strip('-')
-# Save the output file structure
 post_data = {
 "title": f"The Complete Guide to {target_topic.title()}",
 "date": datetime.now().strftime("%Y-%m-%d"),
@@ -268,7 +270,7 @@ os.makedirs("posts", exist_ok=True)
 with open(f"posts/{slug}.json", "w") as f:
 json.dump(post_data, f, indent=2)
 print(f"✅ Success! Content successfully compiled to posts/{slug}.json")
-# Update configuration arrays to prevent repeat topics
+# Update logs to prevent repeat execution down the road
 if target_topic not in used_topics:
 used_topics.append(target_topic)
 with open("used_topics.json", "w") as f:
