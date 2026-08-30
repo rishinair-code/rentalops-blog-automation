@@ -34,7 +34,7 @@ jobs:
       - name: Run blog poster
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }} # Added backup fallback variable
+          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
           UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
@@ -46,19 +46,21 @@ jobs:
       - name: Commit posts and topics log
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "github-actions[bot]@://github.com"
           git add used_topics.json posts/ data/gsc_cache/
           git add published_pillars.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "Add new blog post and update topics log"
           git push
           
       - name: Push JSON to Main Website
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           
-          # Clone the main website repo
-          git clone https://x-access-token:${{ secrets.SYNC_TOKEN }}@://github.com sync_repo
+          # Clone using the environmental variable securely
+          git clone "https://x-access-token:${SYNC_TOKEN}@://github.com" sync_repo
           
           # Copy only the new JSON files to the main repo
           cp posts/*.json sync_repo/posts/
