@@ -15,6 +15,7 @@ except ImportError:
 
 # API Keys from GitHub Secrets
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 DEVTO_API_KEY = os.environ.get('DEVTO_API_KEY')
 UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
 
@@ -427,7 +428,26 @@ def get_unsplash_image(query):
         print(f"⚠️  Unsplash fetch failed: {e}")
         return None
 
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+
+def _convert_messages_to_gemini(messages: list) -> list:
+    """Convert OpenAI-style messages to Gemini contents format."""
+    contents = []
+    for msg in messages:
+        role = msg.get("role", "user")
+        # Map system → user (Gemini treats system separately via systemInstruction)
+        gemini_role = "user" if role == "system" else role
+        contents.append({"role": gemini_role, "parts": [{"text": msg["content"]}]})
+    return contents
+
+
 def call_groq(messages: list, max_tokens: int = 6000, temperature: float = 0.7, force_json_mode: bool = False) -> str | None:
+    """Call Gemini API. Falls back to Groq if GEMINI_API_KEY not set."""
+    if GEMINI_API_KEY:
+        return _call_gemini(messages, max_tokens, temperature, force_json_mode)
+
+    # Fallback to Groq (legacy)
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -448,6 +468,47 @@ def call_groq(messages: list, max_tokens: int = 6000, temperature: float = 0.7, 
         return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
         print(f"❌ Groq API call failed: {e}")
+        return None
+
+
+def _call_gemini(messages: list, max_tokens: int = 6000, temperature: float = 0.7, force_json_mode: bool = False) -> str | None:
+    """Call Gemini API with OpenAI-compatible message format."""
+    model = "gemini-2.0-flash"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+
+    # Extract system instruction (first message if role is system)
+    system_instruction = None
+    user_messages = messages
+    if messages and messages[0].get("role") == "system":
+        system_instruction = {"parts": [{"text": messages[0]["content"]}]}
+        user_messages = messages[1:]
+
+    contents = _convert_messages_to_gemini(user_messages)
+
+    payload = {
+        "contents": contents,
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        },
+    }
+    if system_instruction:
+        payload["systemInstruction"] = system_instruction
+    if force_json_mode:
+        payload["generationConfig"]["responseMimeType"] = "application/json"
+
+    try:
+        response = requests.post(url, json=payload, timeout=120)
+        response.raise_for_status()
+        result = response.json()
+        candidates = result.get("candidates", [])
+        if not candidates:
+            print("❌ Gemini returned no candidates")
+            return None
+        parts = candidates[0].get("content", {}).get("parts", [])
+        return parts[0]["text"] if parts else None
+    except Exception as e:
+        print(f"❌ Gemini API call failed: {e}")
         return None
 
 def repair_json(raw: str) -> str:
