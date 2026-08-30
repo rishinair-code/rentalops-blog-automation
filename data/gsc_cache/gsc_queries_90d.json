@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2026-08-30T12:41:28.705219",
+  "fetched_at": "2026-08-30T13:55:20.341377",
   "date_range": {
     "start": "2026-06-01",
     "end": "2026-08-30"
@@ -11,9 +11,9 @@
         "accounting for landlords"
       ],
       "clicks": 0,
-      "impressions": 14,
+      "impressions": 15,
       "ctr": 0,
-      "position": 50.5
+      "position": 51.06666666666667
     },
     {
       "keys": [
@@ -38,9 +38,9 @@
         "accounting software for landlords"
       ],
       "clicks": 0,
-      "impressions": 11,
+      "impressions": 12,
       "ctr": 0,
-      "position": 55.09090909090909
+      "position": 54.666666666666664
     },
     {
       "keys": [
@@ -83,9 +83,9 @@
         "best app to track rental property expenses"
       ],
       "clicks": 0,
-      "impressions": 3,
+      "impressions": 4,
       "ctr": 0,
-      "position": 42
+      "position": 42.75
     },
     {
       "keys": [
@@ -110,9 +110,9 @@
         "can landlord deduct home office"
       ],
       "clicks": 0,
-      "impressions": 42,
+      "impressions": 43,
       "ctr": 0,
-      "position": 21.571428571428573
+      "position": 21.558139534883722
     },
     {
       "keys": [
@@ -170,12 +170,21 @@
     },
     {
       "keys": [
+        "devops tips for renters"
+      ],
+      "clicks": 0,
+      "impressions": 1,
+      "ctr": 0,
+      "position": 211
+    },
+    {
+      "keys": [
         "diy landlord accounting"
       ],
       "clicks": 0,
-      "impressions": 23,
+      "impressions": 24,
       "ctr": 0,
-      "position": 42.56521739130435
+      "position": 42.75
     },
     {
       "keys": [
@@ -344,9 +353,9 @@
         "property accounting software"
       ],
       "clicks": 0,
-      "impressions": 1,
+      "impressions": 2,
       "ctr": 0,
-      "position": 21
+      "position": 46
     },
     {
       "keys": [
@@ -362,9 +371,9 @@
         "property management expense app"
       ],
       "clicks": 0,
-      "impressions": 10,
+      "impressions": 13,
       "ctr": 0,
-      "position": 38.4
+      "position": 38.61538461538461
     },
     {
       "keys": [
@@ -452,9 +461,9 @@
         "rental expense tracker app"
       ],
       "clicks": 0,
-      "impressions": 33,
+      "impressions": 34,
       "ctr": 0,
-      "position": 35.03030303030303
+      "position": 34.911764705882355
     },
     {
       "keys": [
@@ -470,9 +479,9 @@
         "rental income and expense tracker"
       ],
       "clicks": 0,
-      "impressions": 27,
+      "impressions": 28,
       "ctr": 0,
-      "position": 32.2962962962963
+      "position": 32.035714285714285
     },
     {
       "keys": [
@@ -497,18 +506,18 @@
         "rental property accounting"
       ],
       "clicks": 0,
-      "impressions": 38,
+      "impressions": 39,
       "ctr": 0,
-      "position": 65
+      "position": 65.15384615384616
     },
     {
       "keys": [
         "rental property accounting software"
       ],
       "clicks": 0,
-      "impressions": 46,
+      "impressions": 49,
       "ctr": 0,
-      "position": 60.82608695652174
+      "position": 61.12244897959184
     },
     {
       "keys": [
@@ -706,9 +715,9 @@
         "https://www.rentalops.ca/"
       ],
       "clicks": 22,
-      "impressions": 763,
-      "ctr": 0.028833551769331587,
-      "position": 29.636959370904325
+      "impressions": 789,
+      "ctr": 0.02788339670468948,
+      "position": 29.605830164765525
     },
     {
       "keys": [
@@ -724,9 +733,9 @@
         "https://www.rentalops.ca/blog/understanding-the-failing-to-report-rental-income-cra-consequences-for-accidental-landlords"
       ],
       "clicks": 3,
-      "impressions": 159,
-      "ctr": 0.018867924528301886,
-      "position": 8.553459119496855
+      "impressions": 165,
+      "ctr": 0.01818181818181818,
+      "position": 8.557575757575759
     },
     {
       "keys": [
@@ -742,9 +751,9 @@
         "https://www.rentalops.ca/blog/a-comprehensive-guide-to-splitting-rental-income-spouse-canada-tax"
       ],
       "clicks": 1,
-      "impressions": 330,
-      "ctr": 0.0030303030303030303,
-      "position": 10.175757575757576
+      "impressions": 337,
+      "ctr": 0.002967359050445104,
+      "position": 10.136498516320474
     },
     {
       "keys": [
@@ -877,9 +886,9 @@
         "https://www.rentalops.ca/blog/mastering-the-home-office-deduction-landlord-canada-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 49,
+      "impressions": 50,
       "ctr": 0,
-      "position": 24.285714285714285
+      "position": 24.22
     },
     {
       "keys": [
@@ -1048,25 +1057,25 @@
         "https://www.rentalops.ca/privacy"
       ],
       "clicks": 0,
-      "impressions": 69,
+      "impressions": 70,
       "ctr": 0,
-      "position": 21.159420289855074
+      "position": 23.87142857142857
     },
     {
       "keys": [
         "https://www.rentalops.ca/terms"
       ],
       "clicks": 0,
-      "impressions": 92,
+      "impressions": 97,
       "ctr": 0,
-      "position": 16.108695652173914
+      "position": 15.484536082474227
     }
   ],
   "summary": {
-    "total_queries": 77,
+    "total_queries": 78,
     "total_clicks": 0,
-    "total_impressions": 613,
+    "total_impressions": 629,
     "avg_ctr": 0.0,
-    "avg_position": 40.89132880586628
+    "avg_position": 43.41003472209715
   }
 }
