@@ -110,6 +110,23 @@ def main():
     try:
         service = get_gsc_service()
         print("✅ GSC authenticated")
+    except FileNotFoundError as e:
+        # GSC_SERVICE_ACCOUNT_KEY missing — graceful fallback to existing cache
+        if CACHE_FILE.exists():
+            print(f"⚠️  GSC secret not found: {e}")
+            print(f"   Using existing cache from {CACHE_FILE}")
+            return 0
+        else:
+            print(f"❌ GSC secret not found and no cache exists: {e}")
+            print("   Set GSC_SERVICE_ACCOUNT_KEY (CI) or place JSON in repo root (local).")
+            return 1
+    except Exception as e:
+        print(f"❌ GSC auth failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
+
+    try:
 
         queries = fetch_gsc_queries(service, str(start_date), str(end_date), row_limit=1000)
         print(f"   Queries: {len(queries)}")
