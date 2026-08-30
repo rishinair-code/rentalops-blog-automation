@@ -53,14 +53,12 @@ jobs:
           git push
           
       - name: Push JSON to Main Website
-        env:
-          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           
-          # Clone using the environmental variable securely
-          git clone "https://x-access-token:${SYNC_TOKEN}@://github.com" sync_repo
+          # Clone the main website repo using direct engine macro interpolation
+          git clone "https://x-access-token:${{ secrets.SYNC_TOKEN }}@://github.com" sync_repo
           
           # Copy only the new JSON files to the main repo
           cp posts/*.json sync_repo/posts/
