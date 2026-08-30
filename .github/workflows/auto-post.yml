@@ -9,8 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -35,36 +33,31 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
-          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
-          LINKEDIN_ORGANIZATION_ID: ${{ secrets.LINKEDIN_ORGANIZATION_ID }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
         run: python blog_poster.py
 
       - name: Commit posts and topics log
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@://github.com"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add used_topics.json posts/ data/gsc_cache/
           git add published_pillars.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "Add new blog post and update topics log"
           git push
-          
+
       - name: Push JSON to Main Website
         run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          
-          # Clone the main website repo using direct engine macro interpolation
-          git clone "https://x-access-token:${{ secrets.SYNC_TOKEN }}@://github.com" sync_repo
-          
-          # Copy only the new JSON files to the main repo
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Clone the main website repo
+          git clone "https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/rishinair-code/rental-management-app.git" sync_repo
+
+          # Make sure the destination folder exists, then copy the new JSON files
+          mkdir -p sync_repo/posts
           cp posts/*.json sync_repo/posts/
-          
+
           cd sync_repo
-          
+
           # Check for changes, commit, and push
           if [ -n "$(git status --porcelain)" ]; then
             git add .
