@@ -33,6 +33,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
         run: python blog_poster.py
 
       - name: Commit posts and topics log
@@ -43,26 +44,3 @@ jobs:
           git add published_pillars.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "Add new blog post and update topics log"
           git push
-
-      - name: Push JSON to Main Website
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Clone the main website repo
-          git clone "https://x-access-token:${{ secrets.SYNC_TOKEN }}@github.com/rishinair-code/rental-management-app.git" sync_repo
-
-          # Make sure the destination folder exists, then copy the new JSON files
-          mkdir -p sync_repo/posts
-          cp posts/*.json sync_repo/posts/
-
-          cd sync_repo
-
-          # Check for changes, commit, and push
-          if [ -n "$(git status --porcelain)" ]; then
-            git add .
-            git commit -m "Add new blog post from automation"
-            git push
-          else
-            echo "No new posts to sync."
-          fi
