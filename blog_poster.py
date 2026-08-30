@@ -162,18 +162,18 @@ PILLAR_POSTS = [
 ]
 
 # ─────────────────────────────────────────────────────────────
-# CORE API CALL HANDLERS (FIXES GEMINI 404 AND FALLBACKS)
+# CORE API CALL HANDLERS (FIXES GEMINI 404)
 # ─────────────────────────────────────────────────────────────
 
 def call_gemini_api(prompt_text):
     """
-    Handles robust text generation with official pathing fallbacks to prevent 404s.
+    Handles robust text generation with official pathing to prevent 404 errors.
     """
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        raise ValueError("CRITICAL ERROR: Missing Gemini API configuration inside running environment.")
+        raise ValueError("CRITICAL: Missing Gemini API configuration key inside runner shell environment.")
 
-    # Fix: Route directly through standard v1 instead of the broken v1beta endpoint for 2.0-flash
+    # Fix: Route directly through standard v1 instead of broken v1beta endpoint for 2.0-flash
     url = f"https://googleapis.com{api_key}"
     
     headers = {'Content-Type': 'application/json'}
@@ -186,18 +186,92 @@ def call_gemini_api(prompt_text):
     try:
         response = requests.post(url, json=payload, headers=headers)
         
-        # Fallback Strategy: If 2.0 still returns a 404 for your account tier, jump to stable 1.5-flash path
+        # Fallback Strategy: If 2.0 returns a 404 for your account tier, jump to stable 1.5-flash path
         if response.status_code == 404:
             print("Model 2.0-flash returned 404. Dropping back to stable v1beta/gemini-1.5-flash route...")
             fallback_url = f"https://googleapis.com{api_key}"
             response = requests.post(fallback_url, json=payload, headers=headers)
             
         response.raise_for_status()
-        
-        # Parse the content return object safely
         response_data = response.json()
-        return response_data['candidates']['content']['parts']['text']
+        return response_data['candidates']['content']['parts'][0]['text']
 
     except Exception as e:
         print(f"❌ Gemini API call failed: {e}")
         raise e
+
+# ─────────────────────────────────────────────────────────────
+# MAIN EXECUTION ROUTINE (GSC AUDIT & BLOG GENERATOR)
+# ─────────────────────────────────────────────────────────────
+
+def main():
+
+Use code with caution.
+print("============================================================")
+print("🚀 RentalOps Blog Automation Starting...")
+print("============================================================")
+# Load previously compiled content records
+used_topics = []
+if os.path.exists("used_topics.json"):
+with open("used_topics.json", "r") as f:
+used_topics = json.load(f)
+print(f"📋 Found {len(used_topics)} previously used topics")
+# Step 1: Check updates on GSC to shift strategy
+target_topic = None
+target_persona = "Accidental Landlord"
+cluster_group = "General"
+if pick_topic_gsc_driven:
+print("🔍 Auditing Google Search Console performance data...")
+gsc_data = pick_topic_gsc_driven(used_topics)
+if gsc_data and 'query' in gsc_data:
+target_topic = gsc_data['query']
+print(f"🎯 GSC Gap Identified: {target_topic} (impr: {gsc_data.get('impressions')}, pos: {gsc_data.get('position')})")
+# Match intent profile based on keyword content
+if "t776" in target_topic.lower() or "expense" in target_topic.lower():
+target_persona = "Accidental Landlord"
+cluster_group = "CRA Tax & Reporting"
+# Fallback to predefined personas array if GSC doesn't yield a fresh target keyword
+if not target_topic:
+print("⚠️ No unique GSC data found. Selecting from predefined strategy matrix...")
+available_personas = [p for p in PERSONAS]
+chosen_persona = random.choice(available_personas)
+target_persona = chosen_persona["name"]
+# Pull a keyword that hasn't been written yet
+un-used = [t for t in chosen_persona["topics"] if t not in used_topics]
+target_topic = un-used[0] if un-used else random.choice(chosen_persona["topics"])
+print(f"👤 Target Persona: {target_persona}")
+print(f"🤖 Generating optimized content around keyword target: '{target_topic}'")
+print(f"🗂️ Strategic Content Cluster: {cluster_group}")
+# Step 2: Build Context Prompt and Write the Article
+prompt = f"""
+You are an expert Canadian tax accountant and property management advisor writing for rentalops.ca.
+Write an incredibly comprehensive, highly technical yet accessible SEO-optimized blog post for a '{target_persona}' targeting the keyword phrase: '{target_topic}'.
+Structure requirements:
+1. Include clear H2 and H3 markdown headings.
+2. Reference specific CRA rules or context (like the T776 form or real estate rules for 2026) where applicable.
+3. Keep a professional, authoritative, yet friendly peer-to-peer tone. Do not use generic fluffy filler language.
+"""
+blog_text = call_gemini_api(prompt)
+# Create valid slug format
+slug = re.sub(r'[^a-z0-9]+', '-', target_topic.lower()).strip('-')
+# Save the output file structure
+post_data = {
+"title": f"The Complete Guide to {target_topic.title()}",
+"date": datetime.now().strftime("%Y-%m-%d"),
+"persona": target_persona,
+"cluster": cluster_group,
+"target_keyword": target_topic,
+"slug": slug,
+"content": blog_text
+}
+os.makedirs("posts", exist_ok=True)
+with open(f"posts/{slug}.json", "w") as f:
+json.dump(post_data, f, indent=2)
+print(f"✅ Success! Content successfully compiled to posts/{slug}.json")
+# Update configuration arrays to prevent repeat topics
+if target_topic not in used_topics:
+used_topics.append(target_topic)
+with open("used_topics.json", "w") as f:
+json.dump(used_topics, f, indent=2)
+if name == "main":
+main()
