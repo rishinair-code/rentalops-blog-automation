@@ -13,6 +13,7 @@ except ImportError:
 
 # API Keys / config from GitHub Secrets
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
+UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
 
 # Model is overridable via env var so a future Google deprecation doesn't require
 # a code edit — just update the GEMINI_MODEL secret/variable in the workflow.
@@ -105,7 +106,7 @@ PERSONAS = [
 ]
 
 # ─────────────────────────────────────────────
-# PILLAR POSTS
+# PILLAR POSTS  (defined for future use — main() does not generate these yet)
 # ─────────────────────────────────────────────
 PILLAR_POSTS = [
     {
@@ -166,14 +167,15 @@ PILLAR_POSTS = [
 
 
 # ─────────────────────────────────────────────────────────────
-# GEMINI API CALL
+# GEMINI: structured content generation
 # ─────────────────────────────────────────────────────────────
 
-def call_gemini_api(prompt_text):
+def generate_blog_content(persona, topic):
     """
-    Calls the Gemini API's generateContent endpoint and returns the generated text.
-    Raises a clear error if the API key is missing, the model is rejected (404),
-    or the response doesn't contain the expected content.
+    Asks Gemini for a JSON object matching the site's schema directly
+    (title, metaDescription, tags, content) so no fragile markdown
+    stripping / regex parsing is needed.
+    Returns a dict with keys: title, metaDescription, tags, content.
     """
     if not GEMINI_API_KEY:
         raise ValueError(
@@ -181,21 +183,42 @@ def call_gemini_api(prompt_text):
             "as a GitHub Actions secret."
         )
 
+    prompt = f"""You are an expert Canadian tax accountant and property management advisor writing for rentalops.ca.
+
+Write a comprehensive, SEO-optimized blog post for a "{persona}" targeting the keyword phrase: "{topic}".
+
+Requirements:
+- Reference specific CRA rules or context (like the T776 form, or real estate rules for 2026) where applicable.
+- Professional, authoritative, friendly peer-to-peer tone. No generic filler language.
+- Use markdown with ## and ### headings inside the "content" field.
+- Aim for 1200-2000 words in "content".
+
+Return ONLY a JSON object with exactly these keys:
+- "title": SEO-friendly title (string)
+- "metaDescription": a compelling 140-160 character search-result description (string)
+- "tags": an array of 4-6 short topical tags (strings)
+- "content": the full article body in markdown (string)
+"""
+
     headers = {'Content-Type': 'application/json'}
     payload = {
-        "contents": [{
-            "parts": [{"text": prompt_text}]
-        }]
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"responseMimeType": "application/json"},
     }
     params = {"key": GEMINI_API_KEY}
 
     response = requests.post(GEMINI_API_URL, json=payload, headers=headers, params=params)
 
     if response.status_code == 404:
+        available = _list_available_gemini_models()
+        hint = (
+            f" Models available to your API key that support generateContent: {available}"
+            if available
+            else " Could not retrieve the model list either — check GEMINI_API_KEY is valid."
+        )
         raise RuntimeError(
-            f"Gemini model '{GEMINI_MODEL}' returned 404 — it's likely been "
-            f"deprecated or renamed. Check the current model list in Google AI "
-            f"Studio and set the GEMINI_MODEL env var/secret to the current name."
+            f"Gemini model '{GEMINI_MODEL}' returned 404 — it's likely been deprecated "
+            f"or renamed.{hint} Set the GEMINI_MODEL secret to one of these and re-run."
         )
 
     response.raise_for_status()
@@ -203,7 +226,6 @@ def call_gemini_api(prompt_text):
 
     candidates = response_data.get('candidates')
     if not candidates:
-        # Most common cause: the prompt was blocked by a safety filter.
         block_reason = response_data.get('promptFeedback', {}).get('blockReason')
         raise RuntimeError(
             f"Gemini returned no candidates. blockReason={block_reason!r}. "
@@ -214,7 +236,81 @@ def call_gemini_api(prompt_text):
     if not parts or 'text' not in parts[0]:
         raise RuntimeError(f"Unexpected Gemini response shape: {response_data}")
 
-    return parts[0]['text']
+    raw_text = parts[0]['text'].strip()
+
+    # Safety net: strip markdown code fences if the model added them anyway.
+    if raw_text.startswith('```'):
+        raw_text = re.sub(r'^```[a-zA-Z]*\n?', '', raw_text)
+        raw_text = re.sub(r'\n?```$', '', raw_text).strip()
+
+    blog_data = json.loads(raw_text)
+
+    required = ['title', 'metaDescription', 'tags', 'content']
+    missing = [f for f in required if f not in blog_data]
+    if missing:
+        raise RuntimeError(f"Gemini JSON is missing required fields: {missing}")
+
+    if not isinstance(blog_data['tags'], list):
+        blog_data['tags'] = []
+    blog_data['tags'] = blog_data['tags'][:6]
+
+    return blog_data
+
+
+def _list_available_gemini_models():
+    """Best-effort lookup of models this API key can use, for error messages."""
+    try:
+        resp = requests.get(
+            "https://generativelanguage.googleapis.com/v1beta/models",
+            params={"key": GEMINI_API_KEY},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        models = resp.json().get("models", [])
+        return [
+            m["name"].replace("models/", "")
+            for m in models
+            if "generateContent" in m.get("supportedGenerationMethods", [])
+        ]
+    except Exception:
+        return []
+
+
+# ─────────────────────────────────────────────────────────────
+# UNSPLASH: cover image
+# ─────────────────────────────────────────────────────────────
+
+def get_unsplash_image(query="canadian real estate rental property"):
+    """Fetch a relevant cover image from Unsplash. Returns None on any
+    failure — a missing cover image is non-fatal, the site handles it."""
+    if not UNSPLASH_ACCESS_KEY:
+        print("⚠️  No UNSPLASH_ACCESS_KEY set — skipping cover image.")
+        return None
+
+    try:
+        response = requests.get(
+            "https://api.unsplash.com/photos/random",
+            params={
+                "query": query,
+                "orientation": "landscape",
+                "client_id": UNSPLASH_ACCESS_KEY,
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
+        image_data = response.json()
+
+        image_url = image_data['urls']['regular']
+        photographer = image_data['user']['name']
+        photographer_url = image_data['user']['links']['html']
+
+        return {
+            'url': image_url,
+            'credit': f"Photo by [{photographer}]({photographer_url}) on [Unsplash](https://unsplash.com)",
+        }
+    except Exception as e:
+        print(f"⚠️  Unsplash image fetch failed (non-fatal): {e}")
+        return None
 
 
 # ─────────────────────────────────────────────────────────────
@@ -283,26 +379,23 @@ def main():
     print(f"🤖 Generating optimized content around target keyword: '{target_topic}'")
     print(f"🗂️ Strategic Content Cluster Assignment: {cluster_group}")
 
-    prompt = f"""
-You are an expert Canadian tax accountant and property management advisor writing for rentalops.ca.
-Write an incredibly comprehensive, highly technical yet accessible SEO-optimized blog post for a '{target_persona}' targeting the keyword phrase: '{target_topic}'.
-Structure requirements:
-1. Include clear H2 and H3 markdown headings.
-2. Reference specific CRA rules or context (like the T776 form or real estate rules for 2026) where applicable.
-3. Keep a professional, authoritative, yet friendly peer-to-peer tone. Do not use generic fluffy filler language.
-"""
-
-    blog_text = call_gemini_api(prompt)
+    blog_data = generate_blog_content(target_persona, target_topic)
+    image_data = get_unsplash_image()
 
     slug = re.sub(r'[^a-z0-9]+', '-', target_topic.lower()).strip('-')
+
     post_data = {
-        "title": f"The Complete Guide to {target_topic.title()}",
-        "date": datetime.now().strftime("%Y-%m-%d"),
+        "title": blog_data["title"],
+        "metaDescription": blog_data["metaDescription"],
+        "content": blog_data["content"],
+        "tags": blog_data["tags"],
         "persona": target_persona,
+        "postType": "cluster",
         "cluster": cluster_group,
-        "target_keyword": target_topic,
+        "coverImage": image_data["url"] if image_data else None,
+        "coverImageCredit": image_data["credit"] if image_data else None,
+        "publishedAt": datetime.now().isoformat(),
         "slug": slug,
-        "content": blog_text,
     }
 
     os.makedirs("posts", exist_ok=True)
