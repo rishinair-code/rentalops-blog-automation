@@ -209,19 +209,20 @@ Return ONLY a JSON object with exactly these keys:
 
     response = requests.post(GEMINI_API_URL, json=payload, headers=headers, params=params)
 
-    if response.status_code == 404:
-        available = _list_available_gemini_models()
-        hint = (
-            f" Models available to your API key that support generateContent: {available}"
-            if available
-            else " Could not retrieve the model list either — check GEMINI_API_KEY is valid."
-        )
+    if not response.ok:
+        # Surface Google's actual error body instead of guessing at a cause —
+        # the real message (invalid argument, permission, quota, region, etc.)
+        # is far more useful than a generic "probably deprecated" assumption.
+        try:
+            error_body = response.json()
+        except ValueError:
+            error_body = response.text
         raise RuntimeError(
-            f"Gemini model '{GEMINI_MODEL}' returned 404 — it's likely been deprecated "
-            f"or renamed.{hint} Set the GEMINI_MODEL secret to one of these and re-run."
+            f"Gemini API request failed with status {response.status_code}. "
+            f"URL: {response.url}\n"
+            f"Response body: {error_body}"
         )
 
-    response.raise_for_status()
     response_data = response.json()
 
     candidates = response_data.get('candidates')
@@ -255,25 +256,6 @@ Return ONLY a JSON object with exactly these keys:
     blog_data['tags'] = blog_data['tags'][:6]
 
     return blog_data
-
-
-def _list_available_gemini_models():
-    """Best-effort lookup of models this API key can use, for error messages."""
-    try:
-        resp = requests.get(
-            "https://generativelanguage.googleapis.com/v1beta/models",
-            params={"key": GEMINI_API_KEY},
-            timeout=15,
-        )
-        resp.raise_for_status()
-        models = resp.json().get("models", [])
-        return [
-            m["name"].replace("models/", "")
-            for m in models
-            if "generateContent" in m.get("supportedGenerationMethods", [])
-        ]
-    except Exception:
-        return []
 
 
 # ─────────────────────────────────────────────────────────────
