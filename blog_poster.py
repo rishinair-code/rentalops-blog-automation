@@ -204,7 +204,20 @@ Return ONLY a JSON object with exactly these keys:
     headers = {'Content-Type': 'application/json'}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"responseMimeType": "application/json"},
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": {
+                "type": "OBJECT",
+                "properties": {
+                    "title": {"type": "STRING"},
+                    "metaDescription": {"type": "STRING"},
+                    "tags": {"type": "ARRAY", "items": {"type": "STRING"}},
+                    "content": {"type": "STRING"},
+                },
+                "required": ["title", "metaDescription", "tags", "content"],
+            },
+            "maxOutputTokens": 8192,
+        },
     }
     params = {"key": GEMINI_API_KEY}
 
@@ -258,6 +271,14 @@ Return ONLY a JSON object with exactly these keys:
     if not parts or 'text' not in parts[0]:
         raise RuntimeError(f"Unexpected Gemini response shape: {response_data}")
 
+    finish_reason = candidates[0].get('finishReason')
+    if finish_reason == 'MAX_TOKENS':
+        raise RuntimeError(
+            "Gemini's response was cut off before finishing (finishReason=MAX_TOKENS), "
+            "so the JSON is incomplete. Raise maxOutputTokens in generate_blog_content() "
+            "and try again."
+        )
+
     raw_text = parts[0]['text'].strip()
 
     # Safety net: strip markdown code fences if the model added them anyway.
@@ -265,7 +286,20 @@ Return ONLY a JSON object with exactly these keys:
         raw_text = re.sub(r'^```[a-zA-Z]*\n?', '', raw_text)
         raw_text = re.sub(r'\n?```$', '', raw_text).strip()
 
-    blog_data = json.loads(raw_text)
+    try:
+        blog_data = json.loads(raw_text)
+    except json.JSONDecodeError as e:
+        # Show exactly what broke instead of a bare traceback with no visibility
+        # into the actual content Gemini returned.
+        start = max(0, e.pos - 200)
+        end = min(len(raw_text), e.pos + 200)
+        raise RuntimeError(
+            f"Gemini's response wasn't valid JSON despite responseSchema "
+            f"(finishReason={finish_reason!r}, {len(raw_text)} chars total). "
+            f"Parse error: {e}\n"
+            f"Text around the failure point (char {e.pos}):\n"
+            f"...{raw_text[start:end]}..."
+        ) from e
 
     required = ['title', 'metaDescription', 'tags', 'content']
     missing = [f for f in required if f not in blog_data]
