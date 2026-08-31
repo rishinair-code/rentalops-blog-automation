@@ -1,8 +1,8 @@
 {
-  "fetched_at": "2026-08-30T23:31:35.276046",
+  "fetched_at": "2026-08-31T17:02:05.747263",
   "date_range": {
-    "start": "2026-06-01",
-    "end": "2026-08-30"
+    "start": "2026-06-02",
+    "end": "2026-08-31"
   },
   "site_url": "sc-domain:rentalops.ca",
   "queries": [
@@ -11,9 +11,9 @@
         "accounting for landlords"
       ],
       "clicks": 0,
-      "impressions": 15,
+      "impressions": 16,
       "ctr": 0,
-      "position": 51.06666666666667
+      "position": 51.5625
     },
     {
       "keys": [
@@ -38,9 +38,9 @@
         "accounting software for landlords"
       ],
       "clicks": 0,
-      "impressions": 12,
+      "impressions": 13,
       "ctr": 0,
-      "position": 54.666666666666664
+      "position": 54.07692307692308
     },
     {
       "keys": [
@@ -173,9 +173,9 @@
         "devops tips for renters"
       ],
       "clicks": 0,
-      "impressions": 1,
+      "impressions": 2,
       "ctr": 0,
-      "position": 211
+      "position": 214.5
     },
     {
       "keys": [
@@ -317,9 +317,9 @@
         "landlord+baking"
       ],
       "clicks": 0,
-      "impressions": 1,
+      "impressions": 2,
       "ctr": 0,
-      "position": 11
+      "position": 6
     },
     {
       "keys": [
@@ -353,9 +353,9 @@
         "property accounting software"
       ],
       "clicks": 0,
-      "impressions": 2,
+      "impressions": 3,
       "ctr": 0,
-      "position": 46
+      "position": 54
     },
     {
       "keys": [
@@ -467,15 +467,6 @@
     },
     {
       "keys": [
-        "rental expenses cra"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 2
-    },
-    {
-      "keys": [
         "rental income and expense tracker"
       ],
       "clicks": 0,
@@ -506,18 +497,18 @@
         "rental property accounting"
       ],
       "clicks": 0,
-      "impressions": 39,
+      "impressions": 40,
       "ctr": 0,
-      "position": 65.15384615384616
+      "position": 65.2
     },
     {
       "keys": [
         "rental property accounting software"
       ],
       "clicks": 0,
-      "impressions": 49,
+      "impressions": 50,
       "ctr": 0,
-      "position": 61.12244897959184
+      "position": 61.02
     },
     {
       "keys": [
@@ -611,30 +602,21 @@
     },
     {
       "keys": [
-        "t4036 rental income"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 16
-    },
-    {
-      "keys": [
         "t776 expense tracker"
       ],
       "clicks": 0,
-      "impressions": 62,
+      "impressions": 52,
       "ctr": 0,
-      "position": 28.20967741935484
+      "position": 29.03846153846154
     },
     {
       "keys": [
         "t776 expense tracker canada"
       ],
       "clicks": 0,
-      "impressions": 58,
+      "impressions": 51,
       "ctr": 0,
-      "position": 24.96551724137931
+      "position": 23.96078431372549
     },
     {
       "keys": [
@@ -677,9 +659,9 @@
         "tra rental"
       ],
       "clicks": 0,
-      "impressions": 3,
+      "impressions": 4,
       "ctr": 0,
-      "position": 78.66666666666667
+      "position": 79.25
     },
     {
       "keys": [
@@ -715,9 +697,9 @@
         "https://www.rentalops.ca/"
       ],
       "clicks": 22,
-      "impressions": 789,
-      "ctr": 0.02788339670468948,
-      "position": 29.605830164765525
+      "impressions": 783,
+      "ctr": 0.0280970625798212,
+      "position": 29.79310344827586
     },
     {
       "keys": [
@@ -733,9 +715,9 @@
         "https://www.rentalops.ca/blog/understanding-the-failing-to-report-rental-income-cra-consequences-for-accidental-landlords"
       ],
       "clicks": 3,
-      "impressions": 165,
-      "ctr": 0.01818181818181818,
-      "position": 8.557575757575759
+      "impressions": 166,
+      "ctr": 0.018072289156626505,
+      "position": 8.55421686746988
     },
     {
       "keys": [
@@ -751,9 +733,9 @@
         "https://www.rentalops.ca/blog/a-comprehensive-guide-to-splitting-rental-income-spouse-canada-tax"
       ],
       "clicks": 1,
-      "impressions": 337,
-      "ctr": 0.002967359050445104,
-      "position": 10.136498516320474
+      "impressions": 345,
+      "ctr": 0.002898550724637681,
+      "position": 10.24927536231884
     },
     {
       "keys": [
@@ -787,9 +769,9 @@
         "https://www.rentalops.ca/blog"
       ],
       "clicks": 0,
-      "impressions": 8,
+      "impressions": 7,
       "ctr": 0,
-      "position": 4.5
+      "position": 4.857142857142858
     },
     {
       "keys": [
@@ -814,18 +796,18 @@
         "https://www.rentalops.ca/blog/cra-compliant-bookkeeping-canadian-landlords-complete-guide"
       ],
       "clicks": 0,
-      "impressions": 57,
+      "impressions": 47,
       "ctr": 0,
-      "position": 9.368421052631579
+      "position": 10.106382978723405
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/cra-line-8960-repairs-vs-capital-expenses-for-canadian-landlords"
       ],
       "clicks": 0,
-      "impressions": 52,
+      "impressions": 53,
       "ctr": 0,
-      "position": 11.942307692307692
+      "position": 11.90566037735849
     },
     {
       "keys": [
@@ -895,18 +877,18 @@
         "https://www.rentalops.ca/blog/navigating-the-cra-principal-residence-exemption-a-guide-for-canadian-landlords"
       ],
       "clicks": 0,
-      "impressions": 3,
+      "impressions": 2,
       "ctr": 0,
-      "position": 22
+      "position": 10
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/ontario-landlord-guide-2026"
       ],
       "clicks": 0,
-      "impressions": 2,
+      "impressions": 3,
       "ctr": 0,
-      "position": 9.5
+      "position": 9.666666666666666
     },
     {
       "keys": [
@@ -922,9 +904,9 @@
         "https://www.rentalops.ca/blog/professional-fees-deduction-landlord-canada-legal-accounting-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 2,
+      "impressions": 3,
       "ctr": 0,
-      "position": 3.5
+      "position": 3.6666666666666665
     },
     {
       "keys": [
@@ -1039,9 +1021,9 @@
         "https://www.rentalops.ca/compliance"
       ],
       "clicks": 0,
-      "impressions": 50,
+      "impressions": 39,
       "ctr": 0,
-      "position": 44.56
+      "position": 41
     },
     {
       "keys": [
@@ -1057,9 +1039,9 @@
         "https://www.rentalops.ca/privacy"
       ],
       "clicks": 0,
-      "impressions": 70,
+      "impressions": 71,
       "ctr": 0,
-      "position": 23.87142857142857
+      "position": 26.6056338028169
     },
     {
       "keys": [
@@ -1072,10 +1054,10 @@
     }
   ],
   "summary": {
-    "total_queries": 78,
+    "total_queries": 76,
     "total_clicks": 0,
-    "total_impressions": 629,
+    "total_impressions": 618,
     "avg_ctr": 0.0,
-    "avg_position": 43.41003472209715
+    "avg_position": 44.40447220340152
   }
 }
