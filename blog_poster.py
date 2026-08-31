@@ -317,12 +317,41 @@ Return ONLY a JSON object with exactly these keys:
 # UNSPLASH: cover image
 # ─────────────────────────────────────────────────────────────
 
-def get_unsplash_image(query="canadian real estate rental property"):
-    """Fetch a relevant cover image from Unsplash. Returns None on any
-    failure — a missing cover image is non-fatal, the site handles it."""
+# Cluster-specific query pools. Deliberately avoid "Canada"/"Canadian" — on
+# Unsplash that keyword pulls scenic tourism/landscape photography (mountains,
+# ski towns, heritage hotels) far more than it pulls anything property- or
+# finance-related, which is why earlier runs got mountains instead of houses.
+UNSPLASH_QUERY_POOLS = {
+    "CRA Tax & Reporting": [
+        "tax documents desk paperwork",
+        "accountant calculator receipts",
+        "financial paperwork filing folder",
+        "home office tax season",
+    ],
+    "Ontario Landlord Rules": [
+        "apartment building exterior",
+        "house keys rental property",
+        "lease agreement signing",
+        "residential apartment complex",
+    ],
+    "General": [
+        "small house exterior for rent",
+        "modern apartment building",
+        "house keys real estate",
+        "duplex rental home",
+    ],
+}
+
+
+def get_unsplash_image(cluster="General"):
+    """Fetch a relevant cover image from Unsplash, using a query pool matched
+    to the article's cluster. Returns None on any failure — a missing cover
+    image is non-fatal, the site handles it."""
     if not UNSPLASH_ACCESS_KEY:
         print("⚠️  No UNSPLASH_ACCESS_KEY set — skipping cover image.")
         return None
+
+    query = random.choice(UNSPLASH_QUERY_POOLS.get(cluster, UNSPLASH_QUERY_POOLS["General"]))
 
     try:
         response = requests.get(
@@ -417,7 +446,7 @@ def main():
     print(f"🗂️ Strategic Content Cluster Assignment: {cluster_group}")
 
     blog_data = generate_blog_content(target_persona, target_topic)
-    image_data = get_unsplash_image()
+    image_data = get_unsplash_image(cluster_group)
 
     slug = re.sub(r'[^a-z0-9]+', '-', target_topic.lower()).strip('-')
 
