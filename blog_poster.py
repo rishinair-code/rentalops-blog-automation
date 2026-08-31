@@ -3,6 +3,7 @@ import json
 import requests
 import random
 import re
+import time
 from datetime import datetime
 
 # GSC-driven topic selection (falls back gracefully when cache/API unavailable)
@@ -207,18 +208,38 @@ Return ONLY a JSON object with exactly these keys:
     }
     params = {"key": GEMINI_API_KEY}
 
-    response = requests.post(GEMINI_API_URL, json=payload, headers=headers, params=params)
+    # Transient errors (Google overloaded, rate limited) are worth retrying —
+    # anything else (bad model name, bad request, auth) fails immediately
+    # since retrying won't change the outcome.
+    RETRYABLE_STATUS_CODES = {429, 503}
+    MAX_ATTEMPTS = 4
+    BACKOFF_SECONDS = [15, 30, 60]  # wait times between attempts 1→2, 2→3, 3→4
 
-    if not response.ok:
-        # Surface Google's actual error body instead of guessing at a cause —
-        # the real message (invalid argument, permission, quota, region, etc.)
-        # is far more useful than a generic "probably deprecated" assumption.
+    response = None
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        response = requests.post(GEMINI_API_URL, json=payload, headers=headers, params=params)
+
+        if response.ok:
+            break
+
+        if response.status_code in RETRYABLE_STATUS_CODES and attempt < MAX_ATTEMPTS:
+            wait = BACKOFF_SECONDS[attempt - 1]
+            print(
+                f"⏳ Gemini returned {response.status_code} (attempt {attempt}/{MAX_ATTEMPTS}) "
+                f"— retrying in {wait}s..."
+            )
+            time.sleep(wait)
+            continue
+
+        # Non-retryable error, or retries exhausted — surface Google's actual
+        # error body instead of guessing at a cause.
         try:
             error_body = response.json()
         except ValueError:
             error_body = response.text
         raise RuntimeError(
-            f"Gemini API request failed with status {response.status_code}. "
+            f"Gemini API request failed with status {response.status_code} "
+            f"(after {attempt} attempt{'s' if attempt > 1 else ''}). "
             f"URL: {response.url}\n"
             f"Response body: {error_body}"
         )
