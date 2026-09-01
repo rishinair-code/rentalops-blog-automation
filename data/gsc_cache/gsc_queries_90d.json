@@ -1,8 +1,8 @@
 {
-  "fetched_at": "2026-08-31T21:55:57.284014",
+  "fetched_at": "2026-09-01T15:13:33.952977",
   "date_range": {
-    "start": "2026-06-02",
-    "end": "2026-08-31"
+    "start": "2026-06-03",
+    "end": "2026-09-01"
   },
   "site_url": "sc-domain:rentalops.ca",
   "queries": [
@@ -697,9 +697,9 @@
         "https://www.rentalops.ca/"
       ],
       "clicks": 22,
-      "impressions": 783,
-      "ctr": 0.0280970625798212,
-      "position": 29.79310344827586
+      "impressions": 782,
+      "ctr": 0.028132992327365727,
+      "position": 29.82097186700767
     },
     {
       "keys": [
@@ -796,9 +796,9 @@
         "https://www.rentalops.ca/blog/cra-compliant-bookkeeping-canadian-landlords-complete-guide"
       ],
       "clicks": 0,
-      "impressions": 47,
+      "impressions": 46,
       "ctr": 0,
-      "position": 10.106382978723405
+      "position": 10.23913043478261
     },
     {
       "keys": [
