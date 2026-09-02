@@ -106,78 +106,11 @@ PERSONAS = [
     },
 ]
 
-# ─────────────────────────────────────────────
-# PILLAR POSTS  (defined for future use — main() does not generate these yet)
-# ─────────────────────────────────────────────
-PILLAR_POSTS = [
-    {
-        "id": "cra-tax-pillar",
-        "cluster": "CRA Tax & Reporting",
-        "topic": "rental income tax Canada complete guide small landlords 2026",
-        "title_hint": "Rental Income Tax in Canada: Complete Guide for Small Landlords (2026)",
-        "description": "The definitive guide covering everything a 1-3 property Canadian landlord needs to know about rental income tax, T776, CRA compliance, and deductions.",
-        "target_word_count": 3500,
-        "cluster_posts": [
-            "rental property tax deductions Canada 2026",
-            "how to fill out T776 form Canada step by step",
-            "CRA Line 8960: Repairs vs Capital Expenses for Canadian Landlords",
-            "Can Landlords Deduct Mortgage Interest in Canada Line 8710",
-            "CRA Line 9220: Deducting Utilities for a Basement Suite",
-            "How to Calculate Motor Vehicle Expenses for Landlords Line 9281",
-            "what can landlords claim CRA landlord tax deductions checklist",
-        ],
-        "internal_links": [
-            {
-                "slug": "failing-to-report-rental-income-to-cra-a-costly-mistake-for-canadian-landlords",
-                "title": "Failing to Report Rental Income to CRA: A Costly Mistake for Canadian Landlords",
-            },
-            {
-                "slug": "year-end-tax-checklist-for-canadian-landlords-a-comprehensive-guide",
-                "title": "Year-End Tax Checklist for Canadian Landlords: A Comprehensive Guide",
-            },
-            {
-                "slug": "reporting-rental-income-in-canada-a-guide-for-part-year-landlords",
-                "title": "Reporting Rental Income in Canada: A Guide for Part-Year Landlords",
-            },
-        ],
-    },
-    {
-        "id": "ontario-landlord-pillar",
-        "cluster": "Ontario Landlord Rules",
-        "topic": "Ontario landlord guide 2026 rules rights responsibilities small landlords",
-        "title_hint": "Ontario Landlord Guide 2026: Rules, Rights and Responsibilities",
-        "description": "Everything a small Ontario landlord needs to know about the LTB, lease agreements, tenant screening, security deposits, and eviction rules.",
-        "target_word_count": 3500,
-        "cluster_posts": [
-            "Ontario landlord tenant board rules 2026",
-            "how to write lease agreement Ontario",
-            "security deposit rules Ontario landlords",
-            "how to screen tenants legally Canada",
-            "landlord tenant board Ontario how it works",
-            "converting rental property back to personal use Canada",
-            "reporting rental income part year landlord Canada",
-        ],
-        "internal_links": [
-            {
-                "slug": "converting-rental-property-to-personal-use-in-canada-a-step-by-step-guide",
-                "title": "Converting Rental Property to Personal Use in Canada: A Step-by-Step Guide",
-            },
-        ],
-    },
-]
-
-
 # ─────────────────────────────────────────────────────────────
 # GEMINI: structured content generation
 # ─────────────────────────────────────────────────────────────
 
 def generate_blog_content(persona, topic):
-    """
-    Asks Gemini for a JSON object matching the site's schema directly
-    (title, metaDescription, tags, content) so no fragile markdown
-    stripping / regex parsing is needed.
-    Returns a dict with keys: title, metaDescription, tags, content.
-    """
     if not GEMINI_API_KEY:
         raise ValueError(
             "Missing Gemini API key. Set GEMINI_API_KEY (or GOOGLE_API_KEY) "
@@ -221,12 +154,9 @@ Return ONLY a JSON object with exactly these keys:
     }
     params = {"key": GEMINI_API_KEY}
 
-    # Transient errors (Google overloaded, rate limited) are worth retrying —
-    # anything else (bad model name, bad request, auth) fails immediately
-    # since retrying won't change the outcome.
     RETRYABLE_STATUS_CODES = {429, 503}
     MAX_ATTEMPTS = 4
-    BACKOFF_SECONDS = [15, 30, 60]  # wait times between attempts 1→2, 2→3, 3→4
+    BACKOFF_SECONDS = [15, 30, 60]
 
     response = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
@@ -244,8 +174,6 @@ Return ONLY a JSON object with exactly these keys:
             time.sleep(wait)
             continue
 
-        # Non-retryable error, or retries exhausted — surface Google's actual
-        # error body instead of guessing at a cause.
         try:
             error_body = response.json()
         except ValueError:
@@ -281,7 +209,6 @@ Return ONLY a JSON object with exactly these keys:
 
     raw_text = parts[0]['text'].strip()
 
-    # Safety net: strip markdown code fences if the model added them anyway.
     if raw_text.startswith('```'):
         raw_text = re.sub(r'^```[a-zA-Z]*\n?', '', raw_text)
         raw_text = re.sub(r'\n?```$', '', raw_text).strip()
@@ -289,8 +216,6 @@ Return ONLY a JSON object with exactly these keys:
     try:
         blog_data = json.loads(raw_text)
     except json.JSONDecodeError as e:
-        # Show exactly what broke instead of a bare traceback with no visibility
-        # into the actual content Gemini returned.
         start = max(0, e.pos - 200)
         end = min(len(raw_text), e.pos + 200)
         raise RuntimeError(
@@ -317,10 +242,6 @@ Return ONLY a JSON object with exactly these keys:
 # UNSPLASH: cover image
 # ─────────────────────────────────────────────────────────────
 
-# Cluster-specific query pools. Deliberately avoid "Canada"/"Canadian" — on
-# Unsplash that keyword pulls scenic tourism/landscape photography (mountains,
-# ski towns, heritage hotels) far more than it pulls anything property- or
-# finance-related, which is why earlier runs got mountains instead of houses.
 UNSPLASH_QUERY_POOLS = {
     "CRA Tax & Reporting": [
         "tax documents desk paperwork",
@@ -344,9 +265,6 @@ UNSPLASH_QUERY_POOLS = {
 
 
 def get_unsplash_image(cluster="General"):
-    """Fetch a relevant cover image from Unsplash, using a query pool matched
-    to the article's cluster. Returns None on any failure — a missing cover
-    image is non-fatal, the site handles it."""
     if not UNSPLASH_ACCESS_KEY:
         print("⚠️  No UNSPLASH_ACCESS_KEY set — skipping cover image.")
         return None
@@ -384,15 +302,11 @@ def get_unsplash_image(cluster="General"):
 # ─────────────────────────────────────────────────────────────
 
 def _fallback_topic(persona, used_topics):
-    """Pick a topic for this persona that hasn't been used yet, falling back
-    to a random repeat if every topic has already been covered."""
     unused = [t for t in persona.get("topics", []) if t not in used_topics]
     return random.choice(unused) if unused else random.choice(persona["topics"])
 
 
 def _cluster_for_topic(topic):
-    """Best-effort mapping of a topic string to a content cluster, used for
-    both predefined and GSC-discovered topics."""
     lower = topic.lower()
     if "t776" in lower or "expense" in lower or "tracker" in lower:
         return "CRA Tax & Reporting"
@@ -402,23 +316,59 @@ def _cluster_for_topic(topic):
 
 
 def select_topic(used_topics):
-    """Pick a persona, then pick a topic for that persona — using GSC demand
-    data when available, falling back to the predefined topic list."""
-    chosen_persona = random.choice(PERSONAS)
-    target_persona = chosen_persona["name"]
+    """Pick a topic — using coordinator for monthly planning + GSC demand
+    data, falling back to the predefined topic list."""
+    target_topic = None
+    target_persona = None
+    is_coordinator_pick = False
 
-    if pick_topic_gsc_driven:
-        print("🔍 Auditing Google Search Console performance data...")
-        try:
-            target_topic = pick_topic_gsc_driven(
-                chosen_persona, used_topics, fallback_fn=_fallback_topic
-            )
-        except Exception as e:
-            print(f"⚠️ GSC data processing encountered an error: {e}. Falling back.")
-            target_topic = _fallback_topic(chosen_persona, used_topics)
+    # Try the coordinator from the main repo first for smarter scheduling
+    coordinator_path = "../rental-management-app/scripts/content_coordinator.py"
+    coordinator_local = "content_coordinator.py"
+    coordinator = None
+
+    if os.path.exists(coordinator_path):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("content_coordinator", coordinator_path)
+        coordinator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(coordinator)
+    elif os.path.exists(coordinator_local):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("content_coordinator", coordinator_local)
+        coordinator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(coordinator)
+
+    if coordinator:
+        print("🎯 Using content coordinator for intelligent topic selection...")
+        competitor_kw = coordinator.get_competitor_keywords()
+        pick = coordinator.select_weekly_topic(used_topics, competitor_kw)
+        target_topic = pick["topic"]
+        target_persona = pick["persona"]
+        is_coordinator_pick = True
+        print(f"   Source: {pick['source']} | Score: {round(pick.get('score', 0), 1)} | GSC Impr: {pick.get('impressions', 0)} | Pos: {round(pick.get('position', 100), 1)}")
+        if pick.get("competitor_matches"):
+            print(f"   Competitor overlaps: {len(pick['competitor_matches'])}")
     else:
-        print("⚠️ GSC selector not available. Selecting from predefined strategy matrix...")
-        target_topic = _fallback_topic(chosen_persona, used_topics)
+        print("⚠️ Coordinator not available. Using basic GSC selection...")
+        chosen_persona = random.choice(PERSONAS)
+        target_persona = chosen_persona["name"]
+
+        if pick_topic_gsc_driven:
+            print("🔍 Auditing Google Search Console performance data...")
+            try:
+                target_topic = pick_topic_gsc_driven(
+                    chosen_persona, used_topics, fallback_fn=_fallback_topic
+                )
+            except Exception as e:
+                print(f"⚠️ GSC data processing encountered an error: {e}. Falling back.")
+                target_topic = _fallback_topic(chosen_persona, used_topics)
+        else:
+            print("⚠️ GSC selector not available. Selecting from predefined strategy matrix...")
+            target_topic = _fallback_topic(chosen_persona, used_topics)
+
+    if not target_topic:
+        matched_persona = next((p for p in PERSONAS if p["name"] == target_persona), PERSONAS[0])
+        target_topic = _fallback_topic(matched_persona, used_topics)
 
     cluster_group = _cluster_for_topic(target_topic)
     return target_persona, target_topic, cluster_group
@@ -473,6 +423,15 @@ def main():
         used_topics.append(target_topic)
         with open("used_topics.json", "w") as f:
             json.dump(used_topics, f, indent=2)
+
+    # Sync used_topics to the main repo's cache if coordinator was used
+    # so both repos share state on the 3x/week schedule
+    main_repo_used = "../rental-management-app/data/gsc_cache/used_topics.json"
+    if os.path.exists("../rental-management-app"):
+        os.makedirs("../rental-management-app/data/gsc_cache", exist_ok=True)
+        save_data = {"used_topics": used_topics, "updated_at": datetime.now().isoformat()}
+        with open(main_repo_used, "w") as f:
+            json.dump(save_data, f, indent=2)
 
 
 if __name__ == "__main__":
