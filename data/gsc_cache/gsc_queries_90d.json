@@ -1,8 +1,8 @@
 {
-  "fetched_at": "2026-09-02T13:17:27.792880",
+  "fetched_at": "2026-09-04T13:11:14.732692",
   "date_range": {
-    "start": "2026-06-04",
-    "end": "2026-09-02"
+    "start": "2026-06-06",
+    "end": "2026-09-04"
   },
   "site_url": "sc-domain:rentalops.ca",
   "queries": [
@@ -38,9 +38,9 @@
         "accounting software for landlords"
       ],
       "clicks": 0,
-      "impressions": 13,
+      "impressions": 14,
       "ctr": 0,
-      "position": 54.07692307692308
+      "position": 53.357142857142854
     },
     {
       "keys": [
@@ -110,27 +110,9 @@
         "can landlord deduct home office"
       ],
       "clicks": 0,
-      "impressions": 43,
+      "impressions": 45,
       "ctr": 0,
-      "position": 21.558139534883722
-    },
-    {
-      "keys": [
-        "canada tax rental income"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 66
-    },
-    {
-      "keys": [
-        "canada taxes rental income"
-      ],
-      "clicks": 0,
-      "impressions": 2,
-      "ctr": 0,
-      "position": 52.5
+      "position": 21.444444444444443
     },
     {
       "keys": [
@@ -140,15 +122,6 @@
       "impressions": 2,
       "ctr": 0,
       "position": 26.5
-    },
-    {
-      "keys": [
-        "canadian rental income tax"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 100
     },
     {
       "keys": [
@@ -218,9 +191,9 @@
         "expense tracker for realtors"
       ],
       "clicks": 0,
-      "impressions": 1,
+      "impressions": 2,
       "ctr": 0,
-      "position": 70
+      "position": 69.5
     },
     {
       "keys": [
@@ -236,9 +209,9 @@
         "gmail rental expense tracker"
       ],
       "clicks": 0,
-      "impressions": 4,
+      "impressions": 5,
       "ctr": 0,
-      "position": 47.5
+      "position": 48.4
     },
     {
       "keys": [
@@ -254,9 +227,9 @@
         "how to track rent payments"
       ],
       "clicks": 0,
-      "impressions": 4,
+      "impressions": 5,
       "ctr": 0,
-      "position": 62
+      "position": 61.6
     },
     {
       "keys": [
@@ -272,18 +245,18 @@
         "how to track rental property expenses"
       ],
       "clicks": 0,
-      "impressions": 2,
+      "impressions": 3,
       "ctr": 0,
-      "position": 58.5
+      "position": 53
     },
     {
       "keys": [
         "landlord accounting software"
       ],
       "clicks": 0,
-      "impressions": 43,
+      "impressions": 46,
       "ctr": 0,
-      "position": 49.74418604651163
+      "position": 49.21739130434783
     },
     {
       "keys": [
@@ -299,9 +272,9 @@
         "landlord expense tracker"
       ],
       "clicks": 0,
-      "impressions": 14,
+      "impressions": 15,
       "ctr": 0,
-      "position": 29.857142857142858
+      "position": 29.466666666666665
     },
     {
       "keys": [
@@ -335,18 +308,18 @@
         "open house expense tracker"
       ],
       "clicks": 0,
-      "impressions": 5,
+      "impressions": 7,
       "ctr": 0,
-      "position": 42.4
+      "position": 44
     },
     {
       "keys": [
         "per-property expense tracking"
       ],
       "clicks": 0,
-      "impressions": 4,
+      "impressions": 5,
       "ctr": 0,
-      "position": 26.75
+      "position": 26.4
     },
     {
       "keys": [
@@ -371,27 +344,27 @@
         "property management expense app"
       ],
       "clicks": 0,
-      "impressions": 13,
+      "impressions": 15,
       "ctr": 0,
-      "position": 38.61538461538461
+      "position": 38.666666666666664
     },
     {
       "keys": [
         "property rental accounting software"
       ],
       "clicks": 0,
-      "impressions": 5,
+      "impressions": 6,
       "ctr": 0,
-      "position": 54.2
+      "position": 52.666666666666664
     },
     {
       "keys": [
         "property software tax"
       ],
       "clicks": 0,
-      "impressions": 3,
+      "impressions": 1,
       "ctr": 0,
-      "position": 59.333333333333336
+      "position": 47
     },
     {
       "keys": [
@@ -416,9 +389,18 @@
         "realtor expense app"
       ],
       "clicks": 0,
-      "impressions": 2,
+      "impressions": 3,
       "ctr": 0,
-      "position": 69
+      "position": 68.33333333333333
+    },
+    {
+      "keys": [
+        "realtor expense tracker"
+      ],
+      "clicks": 0,
+      "impressions": 1,
+      "ctr": 0,
+      "position": 52
     },
     {
       "keys": [
@@ -461,9 +443,9 @@
         "rental expense tracker app"
       ],
       "clicks": 0,
-      "impressions": 34,
+      "impressions": 36,
       "ctr": 0,
-      "position": 34.911764705882355
+      "position": 34.69444444444444
     },
     {
       "keys": [
@@ -472,43 +454,34 @@
       "clicks": 0,
       "impressions": 28,
       "ctr": 0,
-      "position": 32.035714285714285
-    },
-    {
-      "keys": [
-        "rental income tax canada"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 97
+      "position": 31.321428571428573
     },
     {
       "keys": [
         "rental income tracker"
       ],
       "clicks": 0,
-      "impressions": 21,
+      "impressions": 23,
       "ctr": 0,
-      "position": 27.571428571428573
+      "position": 27.17391304347826
     },
     {
       "keys": [
         "rental property accounting"
       ],
       "clicks": 0,
-      "impressions": 41,
+      "impressions": 44,
       "ctr": 0,
-      "position": 65.34146341463415
+      "position": 65.1590909090909
     },
     {
       "keys": [
         "rental property accounting software"
       ],
       "clicks": 0,
-      "impressions": 50,
+      "impressions": 55,
       "ctr": 0,
-      "position": 61.02
+      "position": 59.763636363636365
     },
     {
       "keys": [
@@ -533,9 +506,9 @@
         "rental property expense tracker"
       ],
       "clicks": 0,
-      "impressions": 5,
+      "impressions": 6,
       "ctr": 0,
-      "position": 36.2
+      "position": 36.666666666666664
     },
     {
       "keys": [
@@ -578,9 +551,9 @@
         "schedule e rental property tracker"
       ],
       "clicks": 0,
-      "impressions": 2,
+      "impressions": 4,
       "ctr": 0,
-      "position": 62.5
+      "position": 60.25
     },
     {
       "keys": [
@@ -596,27 +569,45 @@
         "small landlord expense tracker"
       ],
       "clicks": 0,
-      "impressions": 27,
+      "impressions": 29,
       "ctr": 0,
-      "position": 29.85185185185185
+      "position": 29.79310344827586
+    },
+    {
+      "keys": [
+        "str bookkeeping"
+      ],
+      "clicks": 0,
+      "impressions": 1,
+      "ctr": 0,
+      "position": 69
+    },
+    {
+      "keys": [
+        "t776"
+      ],
+      "clicks": 0,
+      "impressions": 5,
+      "ctr": 0,
+      "position": 73.2
     },
     {
       "keys": [
         "t776 expense tracker"
       ],
       "clicks": 0,
-      "impressions": 52,
+      "impressions": 48,
       "ctr": 0,
-      "position": 29.03846153846154
+      "position": 24.1875
     },
     {
       "keys": [
         "t776 expense tracker canada"
       ],
       "clicks": 0,
-      "impressions": 51,
+      "impressions": 46,
       "ctr": 0,
-      "position": 23.96078431372549
+      "position": 22.47826086956522
     },
     {
       "keys": [
@@ -647,21 +638,12 @@
     },
     {
       "keys": [
-        "taxes on rental income canada"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 72
-    },
-    {
-      "keys": [
         "tra rental"
       ],
       "clicks": 0,
-      "impressions": 4,
+      "impressions": 5,
       "ctr": 0,
-      "position": 79.25
+      "position": 79.6
     },
     {
       "keys": [
@@ -696,28 +678,28 @@
       "keys": [
         "https://www.rentalops.ca/"
       ],
-      "clicks": 22,
-      "impressions": 789,
-      "ctr": 0.02788339670468948,
-      "position": 29.806083650190114
-    },
-    {
-      "keys": [
-        "https://www.rentalops.ca/blog/failing-to-report-rental-income-to-cra-a-costly-mistake-for-canadian-landlords"
-      ],
-      "clicks": 3,
-      "impressions": 124,
-      "ctr": 0.024193548387096774,
-      "position": 9.024193548387096
+      "clicks": 23,
+      "impressions": 837,
+      "ctr": 0.027479091995221028,
+      "position": 30.09916367980884
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/understanding-the-failing-to-report-rental-income-cra-consequences-for-accidental-landlords"
       ],
       "clicks": 3,
-      "impressions": 168,
-      "ctr": 0.017857142857142856,
-      "position": 8.553571428571429
+      "impressions": 179,
+      "ctr": 0.01675977653631285,
+      "position": 8.603351955307263
+    },
+    {
+      "keys": [
+        "https://www.rentalops.ca/blog/failing-to-report-rental-income-to-cra-a-costly-mistake-for-canadian-landlords"
+      ],
+      "clicks": 2,
+      "impressions": 124,
+      "ctr": 0.016129032258064516,
+      "position": 9.024193548387096
     },
     {
       "keys": [
@@ -733,9 +715,9 @@
         "https://www.rentalops.ca/blog/a-comprehensive-guide-to-splitting-rental-income-spouse-canada-tax"
       ],
       "clicks": 1,
-      "impressions": 353,
-      "ctr": 0.0028328611898017,
-      "position": 10.209631728045325
+      "impressions": 369,
+      "ctr": 0.0027100271002710027,
+      "position": 10.102981029810298
     },
     {
       "keys": [
@@ -805,9 +787,9 @@
         "https://www.rentalops.ca/blog/cra-line-8960-repairs-vs-capital-expenses-for-canadian-landlords"
       ],
       "clicks": 0,
-      "impressions": 53,
+      "impressions": 54,
       "ctr": 0,
-      "position": 11.90566037735849
+      "position": 11.74074074074074
     },
     {
       "keys": [
@@ -868,9 +850,9 @@
         "https://www.rentalops.ca/blog/mastering-the-home-office-deduction-landlord-canada-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 50,
+      "impressions": 52,
       "ctr": 0,
-      "position": 24.22
+      "position": 24.01923076923077
     },
     {
       "keys": [
@@ -904,9 +886,9 @@
         "https://www.rentalops.ca/blog/professional-fees-deduction-landlord-canada-legal-accounting-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 3,
+      "impressions": 11,
       "ctr": 0,
-      "position": 3.6666666666666665
+      "position": 7.545454545454546
     },
     {
       "keys": [
@@ -922,9 +904,9 @@
         "https://www.rentalops.ca/blog/rental-income-affect-tax-bracket-canada"
       ],
       "clicks": 0,
-      "impressions": 26,
+      "impressions": 21,
       "ctr": 0,
-      "position": 33.03846153846154
+      "position": 23.666666666666668
     },
     {
       "keys": [
@@ -1021,9 +1003,9 @@
         "https://www.rentalops.ca/compliance"
       ],
       "clicks": 0,
-      "impressions": 38,
+      "impressions": 26,
       "ctr": 0,
-      "position": 41.86842105263158
+      "position": 28.153846153846153
     },
     {
       "keys": [
@@ -1039,25 +1021,25 @@
         "https://www.rentalops.ca/privacy"
       ],
       "clicks": 0,
-      "impressions": 71,
+      "impressions": 75,
       "ctr": 0,
-      "position": 26.6056338028169
+      "position": 27.626666666666665
     },
     {
       "keys": [
         "https://www.rentalops.ca/terms"
       ],
       "clicks": 0,
-      "impressions": 97,
+      "impressions": 96,
       "ctr": 0,
-      "position": 15.484536082474227
+      "position": 15.625
     }
   ],
   "summary": {
-    "total_queries": 76,
+    "total_queries": 74,
     "total_clicks": 0,
-    "total_impressions": 620,
+    "total_impressions": 646,
     "avg_ctr": 0.0,
-    "avg_position": 44.428263388681806
+    "avg_position": 42.59691615742965
   }
 }
