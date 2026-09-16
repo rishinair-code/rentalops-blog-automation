@@ -1,17 +1,26 @@
 {
-  "fetched_at": "2026-09-14T15:42:00.172971",
+  "fetched_at": "2026-09-16T14:03:35.002606",
   "date_range": {
-    "start": "2026-06-16",
-    "end": "2026-09-14"
+    "start": "2026-06-18",
+    "end": "2026-09-16"
   },
   "site_url": "sc-domain:rentalops.ca",
   "queries": [
     {
       "keys": [
+        "track rental income"
+      ],
+      "clicks": 1,
+      "impressions": 1,
+      "ctr": 1,
+      "position": 1
+    },
+    {
+      "keys": [
         "\"rentalops.ca\""
       ],
       "clicks": 0,
-      "impressions": 4,
+      "impressions": 6,
       "ctr": 0,
       "position": 1
     },
@@ -47,9 +56,9 @@
         "accounting software for landlords"
       ],
       "clicks": 0,
-      "impressions": 16,
+      "impressions": 17,
       "ctr": 0,
-      "position": 52
+      "position": 51.588235294117645
     },
     {
       "keys": [
@@ -86,15 +95,6 @@
       "impressions": 1,
       "ctr": 0,
       "position": 63
-    },
-    {
-      "keys": [
-        "basement rental income tax canada"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 3
     },
     {
       "keys": [
@@ -416,9 +416,9 @@
         "property tax software"
       ],
       "clicks": 0,
-      "impressions": 1,
+      "impressions": 2,
       "ctr": 0,
-      "position": 62
+      "position": 61.5
     },
     {
       "keys": [
@@ -524,9 +524,9 @@
         "rental property accounting software"
       ],
       "clicks": 0,
-      "impressions": 88,
+      "impressions": 93,
       "ctr": 0,
-      "position": 48.53409090909091
+      "position": 47.26881720430107
     },
     {
       "keys": [
@@ -593,15 +593,6 @@
     },
     {
       "keys": [
-        "rental tracking"
-      ],
-      "clicks": 0,
-      "impressions": 2,
-      "ctr": 0,
-      "position": 42
-    },
-    {
-      "keys": [
         "schedule e rental property tracker"
       ],
       "clicks": 0,
@@ -623,7 +614,7 @@
         "site:rentalops.ca rentalops"
       ],
       "clicks": 0,
-      "impressions": 16,
+      "impressions": 26,
       "ctr": 0,
       "position": 1
     },
@@ -760,9 +751,9 @@
         "https://www.rentalops.ca/"
       ],
       "clicks": 25,
-      "impressions": 974,
-      "ctr": 0.02566735112936345,
-      "position": 27.404517453798768
+      "impressions": 988,
+      "ctr": 0.025303643724696356,
+      "position": 27.04757085020243
     },
     {
       "keys": [
@@ -787,45 +778,45 @@
         "https://www.rentalops.ca/blog/a-comprehensive-guide-to-splitting-rental-income-spouse-canada-tax"
       ],
       "clicks": 1,
-      "impressions": 439,
-      "ctr": 0.002277904328018223,
-      "position": 9.93621867881549
+      "impressions": 442,
+      "ctr": 0.0022624434389140274,
+      "position": 9.929864253393665
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/cra-line-8960-repairs-vs-capital-expenses-for-canadian-landlords"
       ],
       "clicks": 1,
-      "impressions": 126,
-      "ctr": 0.007936507936507936,
-      "position": 8.706349206349206
+      "impressions": 130,
+      "ctr": 0.007692307692307693,
+      "position": 8.646153846153847
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/failing-to-report-rental-income-to-cra-a-costly-mistake-for-canadian-landlords"
       ],
       "clicks": 1,
-      "impressions": 103,
-      "ctr": 0.009708737864077669,
-      "position": 8.970873786407767
+      "impressions": 84,
+      "ctr": 0.011904761904761904,
+      "position": 9.25
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/how-to-calculate-motor-vehicle-expenses-for-landlords-line-9281"
       ],
       "clicks": 1,
-      "impressions": 45,
-      "ctr": 0.022222222222222223,
-      "position": 4.933333333333334
+      "impressions": 48,
+      "ctr": 0.020833333333333332,
+      "position": 4.8125
     },
     {
       "keys": [
         "https://www.rentalops.ca/about"
       ],
       "clicks": 0,
-      "impressions": 8,
+      "impressions": 11,
       "ctr": 0,
-      "position": 45.625
+      "position": 34.81818181818182
     },
     {
       "keys": [
@@ -850,36 +841,27 @@
         "https://www.rentalops.ca/blog/cra-compliant-bookkeeping-canadian-landlords-complete-guide"
       ],
       "clicks": 0,
-      "impressions": 23,
+      "impressions": 22,
       "ctr": 0,
-      "position": 13.130434782608695
+      "position": 13.318181818181818
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/cra-line-9220-deducting-utilities-for-a-basement-suite-a-comprehensive-guide-for-canadian-landlords"
       ],
       "clicks": 0,
-      "impressions": 6,
+      "impressions": 8,
       "ctr": 0,
-      "position": 8.333333333333332
+      "position": 8.375
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/gst-hst-canadian-landlords"
       ],
       "clicks": 0,
-      "impressions": 14,
+      "impressions": 21,
       "ctr": 0,
-      "position": 4.285714285714286
-    },
-    {
-      "keys": [
-        "https://www.rentalops.ca/blog/how-to-set-rent-price-canadian-rental-property-a-comprehensive-guide"
-      ],
-      "clicks": 0,
-      "impressions": 1,
-      "ctr": 0,
-      "position": 1
+      "position": 4.523809523809524
     },
     {
       "keys": [
@@ -904,9 +886,9 @@
         "https://www.rentalops.ca/blog/mastering-landlord-multiple-provinces-canada-rules-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 18,
+      "impressions": 19,
       "ctr": 0,
-      "position": 6.055555555555555
+      "position": 6.105263157894737
     },
     {
       "keys": [
@@ -928,15 +910,6 @@
     },
     {
       "keys": [
-        "https://www.rentalops.ca/blog/navigating-the-cra-principal-residence-exemption-a-guide-for-canadian-landlords"
-      ],
-      "clicks": 0,
-      "impressions": 2,
-      "ctr": 0,
-      "position": 10
-    },
-    {
-      "keys": [
         "https://www.rentalops.ca/blog/ontario-landlord-guide-2026"
       ],
       "clicks": 0,
@@ -949,27 +922,27 @@
         "https://www.rentalops.ca/blog/passive-income-rental-income-cra-rules-canada"
       ],
       "clicks": 0,
-      "impressions": 12,
+      "impressions": 22,
       "ctr": 0,
-      "position": 7.666666666666667
+      "position": 6
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/professional-fees-deduction-landlord-canada-legal-accounting-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 14,
+      "impressions": 15,
       "ctr": 0,
-      "position": 7.857142857142857
+      "position": 7.866666666666666
     },
     {
       "keys": [
         "https://www.rentalops.ca/blog/property-manager-vs-self-managing-canada-tax-comparison-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 77,
+      "impressions": 92,
       "ctr": 0,
-      "position": 5.428571428571429
+      "position": 5.391304347826087
     },
     {
       "keys": [
@@ -985,9 +958,9 @@
         "https://www.rentalops.ca/blog/rental-property-accounting-software-vs-spreadsheets-canada-a-comprehensive-guide"
       ],
       "clicks": 0,
-      "impressions": 148,
+      "impressions": 169,
       "ctr": 0,
-      "position": 9.195945945945946
+      "position": 9.195266272189349
     },
     {
       "keys": [
@@ -1030,9 +1003,9 @@
         "https://www.rentalops.ca/blog/t776-form-canada"
       ],
       "clicks": 0,
-      "impressions": 10,
+      "impressions": 13,
       "ctr": 0,
-      "position": 6.7
+      "position": 6.6923076923076925
     },
     {
       "keys": [
@@ -1102,25 +1075,25 @@
         "https://www.rentalops.ca/privacy"
       ],
       "clicks": 0,
-      "impressions": 125,
+      "impressions": 138,
       "ctr": 0,
-      "position": 22.776
+      "position": 21.23913043478261
     },
     {
       "keys": [
         "https://www.rentalops.ca/terms"
       ],
       "clicks": 0,
-      "impressions": 163,
+      "impressions": 178,
       "ctr": 0,
-      "position": 10.134969325153374
+      "position": 9.460674157303371
     }
   ],
   "summary": {
-    "total_queries": 83,
-    "total_clicks": 0,
-    "total_impressions": 716,
-    "avg_ctr": 0.0,
-    "avg_position": 42.601402437294375
+    "total_queries": 82,
+    "total_clicks": 1,
+    "total_impressions": 733,
+    "avg_ctr": 0.012195121951219513,
+    "avg_position": 42.557797120545864
   }
 }
